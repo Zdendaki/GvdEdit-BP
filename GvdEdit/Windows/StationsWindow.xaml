@@ -1,0 +1,118 @@
+﻿<Window x:Class="GvdEdit.Windows.StationsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GvdEdit"
+        xmlns:models="clr-namespace:GvdEdit.Models"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        d:DataContext="{d:DesignInstance models:GvdData}"
+        mc:Ignorable="d"
+        Title="Úprava dopravních bodů" Height="450" Width="1000">
+
+    <Window.Resources>
+        <local:BoolToStringConverter x:Key="BoolToString" />
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Menu Grid.ColumnSpan="2">
+            <MenuItem Header="Přidat dopravní bod" Click="AddStation_Click" />
+            <MenuItem Header="Smazat dopravní bod" Click="DeleteStation_Click" x:Name="DeleteStation" IsEnabled="False" />
+            <MenuItem Header="Přesunout dopravní bod výše" Click="MoveStationUp_Click" x:Name="MoveStationUp" IsEnabled="False" />
+            <MenuItem Header="Přesunout dopravní bod níže" Click="MoveStationDown_Click" x:Name="MoveStationDown" IsEnabled="False" />
+        </Menu>
+        
+        <ListView x:Name="Stations" ItemsSource="{Binding Stations}" SelectionMode="Single" Grid.Row="3" SelectionChanged="Stations_SelectionChanged">
+            <ListView.View>
+                <GridView AllowsColumnReorder="False">
+                    <GridViewColumn Header="Název dopravního bodu" Width="200" DisplayMemberBinding="{Binding PrettyName}" />
+                    <GridViewColumn Header="km" Width="60" DisplayMemberBinding="{Binding Position, StringFormat='0.0'}" />
+                    <GridViewColumn Header="skok" Width="60" DisplayMemberBinding="{Binding Position2, StringFormat='0.0'}" />
+                    <GridViewColumn Header="kol.vlevo" Width="60" DisplayMemberBinding="{Binding TracksLeft}" />
+                    <GridViewColumn Header="kol.vpravo" Width="60" DisplayMemberBinding="{Binding TracksRight}" />
+                    <GridViewColumn Header="TK" Width="60" DisplayMemberBinding="{Binding RouteTracks}" />
+                    <GridViewColumn Header="skrytý" Width="60" DisplayMemberBinding="{Binding Hidden, Converter={StaticResource BoolToString}}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <GroupBox x:Name="StationEdit" Grid.Row="1" Grid.Column="1" Header="Úprava dopravního bodu" d:DataContext="{d:DesignInstance models:Station}" DataContext="{Binding ElementName=Stations, Path=SelectedItem}" IsEnabled="False">
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="200" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Label Content="Typ bodu:" Grid.Row="0" Grid.Column="0" Margin="5"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" Margin="5" SelectedIndex="{Binding StationTypeBinding}">
+                    <ComboBoxItem Content="jiné" />
+                    <ComboBoxItem Content="ŽST" />
+                    <ComboBoxItem Content="AHr" />
+                    <ComboBoxItem Content="AHr z" />
+                    <ComboBoxItem Content="AHr nz" />
+                    <ComboBoxItem Content="z" />
+                    <ComboBoxItem Content="nz" />
+                </ComboBox>
+
+                <Label Content="Název bodu:" Grid.Row="1" Grid.Column="0" Margin="5"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="5" Text="{Binding Name}" />
+
+                <CheckBox Grid.Row="2" Grid.Column="1" Margin="5,10" Content="Stanice je skryta" IsChecked="{Binding Hidden}" />
+
+                <Label Content="Koleje vlevo:" Grid.Row="3" Grid.Column="0" Margin="5"/>
+                <xctk:IntegerUpDown Grid.Row="3" Grid.Column="1" Margin="5" Value="{Binding TracksLeft}" Minimum="0" />
+
+                <Label Content="Koleje vpravo:" Grid.Row="4" Grid.Column="0" Margin="5"/>
+                <xctk:IntegerUpDown Grid.Row="4" Grid.Column="1" Margin="5" Value="{Binding TracksRight}" Minimum="0" />
+
+                <Label Content="Kilometráž:" Grid.Row="5" Grid.Column="0" Margin="5"/>
+                <xctk:DecimalUpDown Grid.Row="5" Grid.Column="1" Margin="5" Value="{Binding Position}" FormatString="0.000" Minimum="0" />
+
+                <Label Content="Skok kilometráže:" Grid.Row="6" Grid.Column="0" Margin="5"/>
+                <xctk:DecimalUpDown Grid.Row="6" Grid.Column="1" Margin="5" Value="{Binding Position2}" FormatString="0.000" Minimum="0" />
+
+                <Label Content="Pozice budovy:" Grid.Row="7" Grid.Column="0" Margin="5"/>
+                <ComboBox Grid.Row="7" Grid.Column="1" Margin="5" SelectedIndex="{Binding StationBuildingBinding}">
+                    <ComboBoxItem Content="žádná/mimoúrovňový přístup" />
+                    <ComboBoxItem Content="vlevo" />
+                    <ComboBoxItem Content="vpravo" />
+                </ComboBox>
+
+                <Label Content="TZZ:" Grid.Row="8" Grid.Column="0" Margin="5"/>
+                <ComboBox Grid.Row="8" Grid.Column="1" Margin="5" SelectedIndex="{Binding RouteInterlockingBinding}">
+                    <ComboBoxItem Content="žádné" />
+                    <ComboBoxItem Content="telefonické dorozumívání" />
+                    <ComboBoxItem Content="poloautomatický blok" />
+                    <ComboBoxItem Content="automatické hradlo nebo automatický blok" />
+                    <ComboBoxItem Content="jednosměrné TZZ" />
+                </ComboBox>
+
+                <Label Content="Traťové koleje:" Grid.Row="9" Grid.Column="0" Margin="5"/>
+                <xctk:IntegerUpDown Grid.Row="9" Grid.Column="1" Margin="5" Value="{Binding RouteTracks}" Minimum="1" />
+            </Grid>
+        </GroupBox>
+    </Grid>
+</Window>

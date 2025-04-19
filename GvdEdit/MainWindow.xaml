@@ -1,0 +1,26 @@
+﻿<Window x:Class="GvdEdit.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GvdEdit"
+        mc:Ignorable="d"
+        Title="GVD editor" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Menu>
+            <MenuItem Header="Soubor">
+                <MenuItem Header="Otevřít..." Click="Load_Click" />
+                <MenuItem Header="Uložit" x:Name="Save" Click="Save_Click" IsEnabled="False" />
+                <MenuItem Header="Uložit jako..." Click="SaveAs_Click" />
+            </MenuItem>
+            <MenuItem Header="Úpravy">
+                <MenuItem Header="Stanice" Click="EditStations_Click" />
+            </MenuItem>
+        </Menu>
+    </Grid>
+</Window>

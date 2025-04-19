@@ -1,0 +1,80 @@
+﻿<Window x:Class="GvdEdit.Windows.StationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GvdEdit.Windows"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:models="clr-namespace:GvdEdit.Models" d:DataContext="{d:DesignInstance Type=models:Station}"
+        mc:Ignorable="d"
+        Title="Úprava stanice" Width="400" SizeToContent="Height" ResizeMode="NoResize">
+    <Grid Margin="5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Label Content="Typ stanice:" Grid.Row="0" Grid.Column="0" Margin="5"/>
+        <ComboBox Grid.Row="0" Grid.Column="1" Margin="5" SelectedIndex="{Binding StationType}">
+            <ComboBoxItem Content="ŽST" />
+            <ComboBoxItem Content="zast." />
+            <ComboBoxItem Content="AHr." />
+            <ComboBoxItem Content="nz." />
+        </ComboBox>
+
+        <Label Content="Název stanice:" Grid.Row="1" Grid.Column="0" Margin="5"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Margin="5" Text="{Binding Name}" />
+
+        <CheckBox Grid.Row="2" Grid.Column="1" Margin="5,10" Content="Stanice je skryta" IsChecked="{Binding Hidden}" />
+
+        <Label Content="Koleje vlevo:" Grid.Row="3" Grid.Column="0" Margin="5"/>
+        <xctk:IntegerUpDown Grid.Row="3" Grid.Column="1" Margin="5" Value="{Binding TracksLeft}" Minimum="0" />
+
+        <Label Content="Koleje vpravo:" Grid.Row="4" Grid.Column="0" Margin="5"/>
+        <xctk:IntegerUpDown Grid.Row="4" Grid.Column="1" Margin="5" Value="{Binding TracksRight}" Minimum="0" />
+
+        <Label Content="Kilometráž:" Grid.Row="5" Grid.Column="0" Margin="5"/>
+        <xctk:DecimalUpDown Grid.Row="5" Grid.Column="1" Margin="5" Value="{Binding Position}" FormatString="0.000" Minimum="0" />
+
+        <Label Content="Skok kilometráže:" Grid.Row="6" Grid.Column="0" Margin="5"/>
+        <xctk:DecimalUpDown Grid.Row="6" Grid.Column="1" Margin="5" Value="{Binding Position2}" FormatString="0.000" Minimum="0" />
+
+        <Label Content="Pozice budovy:" Grid.Row="7" Grid.Column="0" Margin="5"/>
+        <ComboBox Grid.Row="7" Grid.Column="1" Margin="5" SelectedIndex="{Binding StationBuilding}">
+            <ComboBoxItem Content="mimoúrovňový přístup" />
+            <ComboBoxItem Content="vlevo" />
+            <ComboBoxItem Content="vpravo" />
+        </ComboBox>
+
+        <Label Content="TZZ:" Grid.Row="8" Grid.Column="0" Margin="5"/>
+        <ComboBox Grid.Row="8" Grid.Column="1" Margin="5" SelectedIndex="{Binding RouteInterlocking}">
+            <ComboBoxItem Content="žádné" />
+            <ComboBoxItem Content="telefonické dorozumívání" />
+            <ComboBoxItem Content="poloautomatický blok" />
+            <ComboBoxItem Content="automatické hradlo nebo automatický blok" />
+            <ComboBoxItem Content="jednosměrné TZZ" />
+        </ComboBox>
+        
+        <Label Content="Traťové koleje:" Grid.Row="9" Grid.Column="0" Margin="5"/>
+        <xctk:IntegerUpDown Grid.Row="9" Grid.Column="1" Margin="5" Value="{Binding RouteTracks}" Minimum="1" />
+
+        <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.ColumnSpan="2" HorizontalAlignment="Right">
+            <Button x:Name="Close" Margin="5" Content="Zavřít" Padding="20,5" Click="Close_Click" />
+            <Button x:Name="Save" Margin="5" Content="Uložit" Padding="20,5" Click="Save_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
