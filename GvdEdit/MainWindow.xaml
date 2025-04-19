@@ -3,16 +3,34 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         xmlns:local="clr-namespace:GvdEdit"
+        xmlns:models="clr-namespace:GvdEdit.Models"
+        xmlns:viewmodels="clr-namespace:GvdEdit.ViewModels"
+        d:DataContext="{d:DesignInstance models:GvdData}"
         mc:Ignorable="d"
-        Title="GVD editor" Height="450" Width="800">
+        Title="GVD editor" Height="450" Width="1200">
+
+    <Window.Resources>
+        <CollectionViewSource x:Key="TrainsView" Source="{Binding TrainsVM}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Number" Direction="Ascending" />
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
+    
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Menu>
+        <Menu Grid.ColumnSpan="2">
             <MenuItem Header="Soubor">
                 <MenuItem Header="Otevřít..." Click="Load_Click" />
                 <MenuItem Header="Uložit" x:Name="Save" Click="Save_Click" IsEnabled="False" />
@@ -22,5 +40,115 @@
                 <MenuItem Header="Stanice" Click="EditStations_Click" />
             </MenuItem>
         </Menu>
+
+        <GroupBox Grid.Row="1" Header="Seznam vlaků">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ListBox x:Name="Trains" ItemsSource="{Binding Source={StaticResource TrainsView}}" DisplayMemberPath="Name" x:FieldModifier="internal" SelectionChanged="Trains_SelectionChanged" />
+
+                <xctk:DropDownButton x:Name="NewTrain" Grid.Row="1" Margin="0,5" Content="Nový vlak" Padding="5" Click="NewTrain_Click">
+                    <xctk:DropDownButton.DropDownContent>
+                        <StackPanel>
+                            <MenuItem Header="Odstranit vlak" />
+                            <MenuItem Header="Duplikovat vlak" />
+                        </StackPanel>
+                    </xctk:DropDownButton.DropDownContent>
+                </xctk:DropDownButton>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox x:Name="TrainGroupBox" Grid.Row="1" Grid.Column="1" Header="Detail vlaku" d:DataContext="{d:DesignInstance viewmodels:TrainVM}" DataContext="{Binding ElementName=Trains, Path=SelectedItem}" IsEnabled="False">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Kategorie:" Margin="5" />
+                <ComboBox Grid.Row="0" Grid.Column="1" Margin="5" SelectedIndex="{Binding Category}">
+                    <ComboBoxItem Content="Ex" />
+                    <ComboBoxItem Content="R" />
+                    <ComboBoxItem Content="Sp" />
+                    <ComboBoxItem Content="Os" />
+                    <ComboBoxItem Content="Sv" />
+                    <ComboBoxItem Content="Nex" />
+                    <ComboBoxItem Content="Pn" />
+                    <ComboBoxItem Content="Mn" />
+                    <ComboBoxItem Content="Vleč" />
+                    <ComboBoxItem Content="Služ" />
+                    <ComboBoxItem Content="Lv" />
+                    <ComboBoxItem Content="Pom" />
+                </ComboBox>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Číslo vlaku:" Margin="5" />
+                <xctk:IntegerUpDown Grid.Row="0" Grid.Column="3" Margin="5" ShowButtonSpinner="False" Minimum="1" Maximum="899999" TextAlignment="Left" Value="{Binding Number}" />
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Výchozí bod:" Margin="5" />
+                <ComboBox x:Name="PointFrom" Grid.Row="1" Grid.Column="1" Margin="5" SelectedItem="{Binding StationFrom}" />
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Cílový bod:" Margin="5" />
+                <ComboBox x:Name="PointTo" Grid.Row="1" Grid.Column="3" Margin="5" SelectedItem="{Binding StationTo}" />
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Čas odjezdu:" Margin="5" />
+                <xctk:TimePicker x:Name="StartTime" Grid.Row="2" Grid.Column="1" Margin="5" ShowDropDownButton="False" TextAlignment="Left" Value="{Binding DepartureDate}" />
+
+                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
+                    <CheckBox VerticalAlignment="Center" Content="Nabídková trasa PD" Margin="5,5,15,5" IsChecked="{Binding AdHocPath}" />
+                    <Button Margin="5" Content="Zavést vlak" Padding="10,0" x:Name="CreateTrain" Click="CreateTrain_Click" />
+                    <xctk:DropDownButton Margin="0,5" Content="Importovat" Padding="10,0,5,0">
+                        <xctk:DropDownButton.DropDownContent>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="Načte jízdu vlaku z programu RailCalc" />
+                                <CheckBox x:Name="LoadStartTime" Content="Načíst včetně počátačního času" Margin="0,5" />
+                                <Button x:Name="RailCalcImport" Content="Načíst jízdu vlaku" Click="RailCalcImport_Click" />
+                            </StackPanel>
+                        </xctk:DropDownButton.DropDownContent>
+                    </xctk:DropDownButton>
+                    <Button Margin="5" Content="Duplikovat" Padding="10,0" />
+                </StackPanel>
+
+                <DataGrid x:Name="TrainStops" Grid.Row="3" Grid.ColumnSpan="4" CanUserSortColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" AutoGenerateColumns="False" ItemsSource="{Binding TrainStops}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Dopravní bod" Binding="{Binding Station, Mode=OneTime}" Width="*" IsReadOnly="True" />
+                        <DataGridTemplateColumn Header="Pobyt" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <xctk:DecimalUpDown Minimum="0" FormatString="0.0" Increment="0.5" Value="{Binding WaitTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Jízdní doba" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <xctk:DecimalUpDown Minimum="0" FormatString="0.0" Increment="0.5" Value="{Binding TravelTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Příjezd" Width="60" CanUserResize="False" Binding="{Binding Arrival, StringFormat=hh\\:mm\\:ss, Mode=OneWay}" />
+                        <DataGridTextColumn Header="Odjezd" Width="60" CanUserResize="False" Binding="{Binding Departure, StringFormat=hh\\:mm\\:ss, Mode=OneWay}" />
+                        <DataGridCheckBoxColumn Header="  L  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding LeftTrack, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header="  ▲  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding ShortStop, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header="  ◗  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding OnlyIn, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header="  ◖  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding OnlyOut, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header="  +  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding ZDD, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header=" ☎ " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding TelD3, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header="  Z  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding Starts, UpdateSourceTrigger=PropertyChanged}" />
+                        <DataGridCheckBoxColumn Header="  K  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding Ends, UpdateSourceTrigger=PropertyChanged}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </GroupBox>
     </Grid>
 </Window>

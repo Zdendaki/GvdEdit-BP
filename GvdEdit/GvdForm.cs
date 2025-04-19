@@ -1,8 +1,10 @@
 ﻿using GvdEdit.Models;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.Linq;
 using System.Windows.Forms;
@@ -22,9 +24,9 @@ namespace GvdEdit
         internal bool AllowClose = false;
 
         private Stopwatch _stopwatch = new();
-        private int HourFrom = 0;
+        private int HourFrom = 6;
         private int HourTo = 12;
-        private int MinuteScale = 8;
+        private int MinuteScale = 6;
         private int StationScale = 10;
 
         public GvdForm()
@@ -34,6 +36,9 @@ namespace GvdEdit
 
         internal Size ComputeSize()
         {
+            if (App.Data.Stations.Count == 0)
+                return Size.Empty;
+
             int totalMinutes = (HourTo - HourFrom) * 60;
             int name2X = OFFSET_X + (totalMinutes + 10) * MinuteScale;
 
@@ -66,6 +71,7 @@ namespace GvdEdit
         private void UpdateSizeInternal()
         {
             Canvas.Size = ComputeSize();
+            ExportButton.Enabled = Canvas.Size != Size.Empty;
         }
 
         protected override CreateParams CreateParams
@@ -107,6 +113,7 @@ namespace GvdEdit
             DrawHeader(g);
             DrawStations(g);
             DrawGrid(g);
+            DrawTrains(g);
         }
 
         private void DrawHeader(Graphics g)
@@ -238,10 +245,10 @@ namespace GvdEdit
                 g.DrawLine(pen, dx, OFFSET_Y + LINE_OFFSET, dx, lastY + STATION_OFFSET);
             }
 
-            for (int h = HourFrom; h <= HourTo; h++)
+            for (int h = 0; h <= (HourTo - HourFrom); h++)
             {
                 Font font = new Font(Verdana, 24);
-                string str = h.ToString();
+                string str = (HourFrom + h).ToString();
                 SizeF size = g.MeasureString(str, font);
                 float x = startX + (h * 60) * MinuteScale - size.Width / 2f;
                 g.DrawString(str, font, Brushes.Black, x, OFFSET_Y - size.Height);
@@ -256,14 +263,144 @@ namespace GvdEdit
             g.DrawLine(ORANGE4, OFFSET_X + width - MinuteScale * 5, OFFSET_Y + LINE_OFFSET, OFFSET_X + width - MinuteScale * 5, lastY + STATION_OFFSET);
         }
 
-        private void Canvas_Click(object sender, System.EventArgs e)
+        private void DrawTrains(Graphics g)
+        {
+            Font font = new Font(Verdana, 10, FontStyle.Bold);
+
+            foreach (Train train in App.Data.Trains)
+            {
+                if (train.Stops.Count < 2)
+                    continue;
+
+                List<PointF> points = new((train.Stops.Count - 1) * 2);
+
+                Pen pen = BLACK1;
+                if (train.ID == App.SelectedTrain)
+                    pen = GREEN4;
+                else if (train.Category < TrainCategory.Os || train.Category == TrainCategory.Pom)
+                    pen = BLACK4;
+                else if (train.Category < TrainCategory.Nex)
+                    pen = BLACK2;
+                else if (train.Category == TrainCategory.Nex)
+                    pen = BLUE4;
+                else if (train.Category < TrainCategory.Lv)
+                    pen = BLUE2;
+
+                for (int i = 0; i < train.Stops.Count - 1; i++)
+                {
+                    Stop st1 = train.Stops[i];
+                    Stop st2 = train.Stops[i + 1];
+
+                    Station s1 = getStation(st1);
+                    Station s2 = getStation(st2);
+
+                    PointF p1 = GetPoint(s1, st1.Departure);
+                    PointF p2 = GetPoint(s2, st2.Arrival);
+
+                    if (p1 == PointF.Empty || p2 == PointF.Empty)
+                        continue;
+
+                    bool directionDown = p2.Y > p1.Y;
+
+                    if (i == 0)
+                        pointDecor(p1, st1, directionDown, 0);
+
+                    pointDecor(p2, st2, directionDown, p2.X - p1.X);
+
+                    points.Add(p1);
+                    points.Add(p2);
+
+                    if ((st2.Departure - st2.Arrival) > TimeSpan.FromMinutes(1))
+                    {
+                        g.DrawLines(pen, points.ToArray());
+                        points.Clear();
+                    }
+                }
+
+                if (points.Count > 0)
+                    g.DrawLines(pen, points.ToArray());
+
+                void pointDecor(in PointF point, Stop stop, bool directionDown, float delta)
+                {
+                    if (stop.Starts || stop.Ends)
+                        g.FillEllipse(pen.Brush, point.X - 6, point.Y - 6, 12, 12);
+
+                    string decor;
+                    if (stop.ShortStop)
+                        decor = "▲";
+                    else if (stop.OnlyIn)
+                        decor = "◗";
+                    else if (stop.OnlyOut)
+                        decor = "◖";
+                    else if (stop.ZDD)
+                        decor = "+";
+                    else if (stop.TelD3)
+                        decor = "☎";
+                    else
+                        return;
+
+                    SizeF sts = g.MeasureString(decor, font);
+                    float offsetY = directionDown ? sts.Height : 0;
+                    g.DrawString(decor, font, pen.Brush, point.X - sts.Width - delta / 5, point.Y - offsetY);
+                }
+            }
+
+            Station getStation(Stop stop) => App.Data.Stations.First(x => x.ID == stop.Station);
+        }
+
+        private PointF GetPoint(Station station, TimeSpan time)
+        {
+            if (time.TotalMinutes < HourFrom * 60 - 5 || time.TotalMinutes > HourTo * 60 + 5)
+                return PointF.Empty;
+
+            float minutes = (float)time.TotalMinutes - HourFrom * 60 + 5;
+            float x = OFFSET_X + minutes * MinuteScale;
+            float y = station.DrawY;
+
+            return new(x, y);
+        }
+
+        private void Canvas_Click(object sender, EventArgs e)
         {
             Canvas.Invalidate();
         }
 
+        public void Redraw()
+        {
+            if (Canvas.InvokeRequired)
+                Canvas.Invoke(Canvas.Invalidate);
+            else
+                Canvas.Invalidate();
+        }
+
         private void ExportButton_Click(object sender, EventArgs e)
         {
+            Size size = ComputeSize();
+            using Bitmap bitmap = new(size.Width, size.Height);
+            using (Graphics g = Graphics.FromImage(bitmap))
+                Draw(g);
 
+            string fileName = App.Data.Stations.First().Name + " - " + App.Data.Stations.Last().Name + ".png";
+            using SaveFileDialog dialog = new()
+            {
+                Filter = "Soubory PNG (*.png)|*.png|Všechny soubory|*.*",
+                FileName = fileName,
+                Title = "Exportovat do PNG"
+            };
+
+            if (dialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            try
+            {
+                string path = dialog.FileName;
+                bitmap.Save(path, ImageFormat.Png);
+                MessageBox.Show(this, $"Obrázek exportován do {path}", "Exportováno", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Chyba při exportu obrázku: {ex.Message}", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 
@@ -274,6 +411,8 @@ namespace GvdEdit
         public static readonly SolidBrush SZ_BLUE = new SolidBrush(Color.FromArgb(0, 43, 89));
 
         public static readonly SolidBrush SZ_ORGE = new SolidBrush(Color.FromArgb(255, 82, 0));
+
+        public static readonly SolidBrush SZ_GREN = new SolidBrush(Color.FromArgb(52, 164, 154));
 
         public static readonly Pen BLACK1 = new(Brushes.Black, 1);
 
@@ -294,5 +433,15 @@ namespace GvdEdit
         public static readonly Pen ORANGE2 = new(SZ_ORGE, 2);
 
         public static readonly Pen ORANGE4 = new(SZ_ORGE, 4);
+
+        public static readonly Pen GREEN4 = new(SZ_GREN, 4);
+
+        public static readonly Pen BLUE4 = new(Brushes.Blue, 4);
+
+        public static readonly Pen BLUE3 = new(Brushes.Blue, 3);
+
+        public static readonly Pen BLUE2 = new(Brushes.Blue, 2);
+
+        public static readonly Pen BLUE1 = new(Brushes.Blue, 1);
     }
 }

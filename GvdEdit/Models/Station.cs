@@ -1,14 +1,16 @@
 ﻿#pragma warning disable CS9264
 
+using Newtonsoft.Json;
 using System;
 using System.Text;
-using System.Text.Json.Serialization;
 
 namespace GvdEdit.Models
 {
     public class Station : NotifyPropertyChanged
     {
         internal float DrawY = 0;
+
+        public Guid ID { get; init; } = Guid.NewGuid();
 
         public StationType StationType
         {
@@ -228,6 +230,8 @@ namespace GvdEdit.Models
                 _ => StationType.Other
             };
         }
+
+        public override string ToString() => GetPrettyName(false);
     }
 
     [Flags]

@@ -65,6 +65,7 @@ namespace GvdEdit
             // ExportButton
             // 
             ExportButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            ExportButton.Enabled = false;
             ExportButton.Image = (Image)resources.GetObject("ExportButton.Image");
             ExportButton.ImageTransparentColor = Color.Magenta;
             ExportButton.Name = "ExportButton";

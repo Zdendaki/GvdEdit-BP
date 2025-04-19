@@ -1,4 +1,6 @@
 ﻿using GvdEdit.Models;
+using GvdEdit.ViewModels;
+using System;
 using System.Collections.Specialized;
 using System.Windows;
 
@@ -35,6 +37,8 @@ namespace GvdEdit
 
             MainWindow.StationsChanged();
         }
+
+        internal static Guid SelectedTrain => MainWindow.Trains.SelectedItem is TrainVM train ? train.ID : Guid.Empty;
 
         internal static string? FileName { get; set; } = null;
     }

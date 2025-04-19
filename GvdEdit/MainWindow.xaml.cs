@@ -1,10 +1,14 @@
 ﻿using GvdEdit.Models;
+using GvdEdit.ViewModels;
 using GvdEdit.Windows;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace GvdEdit
 {
@@ -22,6 +26,8 @@ namespace GvdEdit
 
             _gvdForm = new();
             Loaded += MainWindow_Loaded;
+
+            DataContext = App.Data;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -39,8 +45,11 @@ namespace GvdEdit
 
         internal void StationsChanged()
         {
+            PointFrom.ItemsSource = PointTo.ItemsSource = App.Data.Stations;
             _gvdForm.UpdateSize();
         }
+
+        internal void RedrawGVD() => _gvdForm.Redraw();
 
         private void EditStations_Click(object sender, RoutedEventArgs e)
         {
@@ -70,6 +79,7 @@ namespace GvdEdit
                 App.Data = data;
                 App.FileName = fileName;
                 Save.IsEnabled = true;
+                DataContext = App.Data;
             }
             catch (Exception ex)
             {
@@ -108,6 +118,141 @@ namespace GvdEdit
 
                 App.FileName = fileName;
                 Save.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void NewTrain_Click(object sender, RoutedEventArgs e)
+        {
+            TrainVM train = new();
+            App.Data.TrainsVM.Add(train);
+            Trains.SelectedItem = train;
+        }
+
+        private void CreateTrain_Click(object sender, RoutedEventArgs e)
+        {
+            if (Trains.SelectedItem is not TrainVM train)
+                return;
+
+            train.CreateStops();
+        }
+
+        private void Trains_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            TrainGroupBox.IsEnabled = Trains.SelectedIndex >= 0;
+            RedrawGVD();
+        }
+
+        private void RailCalcImport_Click(object sender, RoutedEventArgs e)
+        {
+            if (Trains.SelectedItem is not TrainVM train)
+                return;
+
+            bool loadTime = LoadStartTime.IsChecked != true;
+
+            if (!loadTime && !StartTime.Value.HasValue)
+            {
+                MessageBox.Show(this, "Nastavte čas odjezdu vlaku.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            OpenFileDialog ofd = new()
+            {
+                Filter = "Soubory CSV (*.csv)|*.csv|Všechny soubory|*.*",
+                Title = "Načíst soubor z RailCalc"
+            };
+
+            if (ofd.ShowDialog() != true)
+                return;
+
+            string fileName = ofd.FileName;
+            train.TrainStops.Clear();
+
+            try
+            {
+                IEnumerable<string> lines = File.ReadAllLines(fileName).Skip(1);
+                TimeSpan offset = loadTime ? TimeSpan.Zero : StartTime.Value!.Value.TimeOfDay;
+
+                int i = 0;
+                foreach (string line in lines)
+                {
+                    bool first = i == 0;
+                    bool last = lines.Count() - 1 == i;
+
+                    i++;
+                    string[] parts = line.Split(';');
+                    if (parts.Length < 4)
+                        continue;
+                    if (parts[0].Length != 1)
+                        continue;
+
+                    TimeSpan arrival, departure;
+                    if (!TimeSpan.TryParseExact(parts[2], "h\\:mm\\:ss", null, out arrival) && !first)
+                        continue;
+
+                    if (!TimeSpan.TryParseExact(parts[3], "h\\:mm\\:ss", null, out departure) && !last)
+                        continue;
+
+                    if (first)
+                    {
+                        arrival = departure;
+
+                        if (!loadTime)
+                            offset -= departure;
+                    }
+                    if (last)
+                        departure = arrival;
+
+                    bool stop = parts[0].Equals("Z", StringComparison.OrdinalIgnoreCase);
+                    string name = parts[1];
+                    bool shortStop = false;
+
+                    if (App.Data.Stations.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is not Station station)
+                        continue;
+
+                    if (stop && (departure - arrival) < TimeSpan.FromSeconds(30))
+                        shortStop = true;
+
+                    train.TrainStops.Add(new StopVM
+                    {
+                        Station = station,
+                        Arrival = arrival + offset,
+                        Departure = departure + offset,
+                        ShortStop = shortStop,
+                        Starts = first,
+                        Ends = last,
+                    });
+                }
+
+                int lastID = -1;
+                bool invalid = false;
+                foreach (var stop in train.TrainStops)
+                {
+                    if (lastID < 0)
+                    {
+                        lastID = App.Data.Stations.IndexOf(stop.Station);
+                        continue;
+                    }
+
+                    int id = App.Data.Stations.IndexOf(stop.Station);
+
+                    if (id < 0 || Math.Abs(id - lastID) > 1)
+                    {
+                        invalid = true;
+                        break;
+                    }
+
+                    lastID = id;
+                }
+
+                if (invalid)
+                {
+                    train.TrainStops.Clear();
+                    MessageBox.Show(this, "Načtený vlak není platný. Zkontrolujte, zda jsou zastávky v pořádku.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
