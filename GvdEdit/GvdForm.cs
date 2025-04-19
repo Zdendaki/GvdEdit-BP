@@ -14,10 +14,14 @@ namespace GvdEdit
     {
         private const int CP_NOCLOSE_BUTTON = 0x200;
 
+        private const int STATION_OFFSET = 60;
+        private const int LINE_OFFSET = 20;
+        private const int OFFSET_X = 500;
+        private const int OFFSET_Y = 220;
+
         internal bool AllowClose = false;
 
         private Stopwatch _stopwatch = new();
-
         private int HourFrom = 0;
         private int HourTo = 12;
         private int MinuteScale = 8;
@@ -26,6 +30,42 @@ namespace GvdEdit
         public GvdForm()
         {
             InitializeComponent();
+        }
+
+        internal Size ComputeSize()
+        {
+            int totalMinutes = (HourTo - HourFrom) * 60;
+            int name2X = OFFSET_X + (totalMinutes + 10) * MinuteScale;
+
+            int width = name2X + 600;
+            float height = OFFSET_Y;
+            float lastkm = -1;
+
+            foreach (Station station in App.Data.Stations)
+            {
+                if (lastkm < 0)
+                    lastkm = station.Position2;
+
+                height += STATION_OFFSET + Math.Abs(station.Position - lastkm) * StationScale;
+                lastkm = station.Position2;
+            }
+
+            height += 200;
+
+            return new(width, (int)height);
+        }
+
+        public void UpdateSize()
+        {
+            if (Canvas.InvokeRequired)
+                Canvas.Invoke(UpdateSizeInternal);
+            else
+                UpdateSizeInternal();
+        }
+
+        private void UpdateSizeInternal()
+        {
+            Canvas.Size = ComputeSize();
         }
 
         protected override CreateParams CreateParams
@@ -45,24 +85,28 @@ namespace GvdEdit
 
         private void Canvas_Paint(object sender, PaintEventArgs e)
         {
-            Graphics g = e.Graphics;
             _stopwatch.Restart();
 
+            Draw(e.Graphics);
+
+            _stopwatch.Stop();
+            e.Graphics.DrawString(_stopwatch.ElapsedMilliseconds.ToString(), new Font(Verdana, 10), Brushes.Red, 0, 0);
+        }
+
+        private void Draw(Graphics g)
+        {
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
             g.CompositingQuality = CompositingQuality.HighQuality;
             g.SmoothingMode = SmoothingMode.HighQuality;
 
             g.Clear(Color.White);
 
-            if (App.Data.Stations.Count > 0)
-            {
-                DrawHeader(g);
-                DrawStations(g);
-                DrawGrid(g);
-            }
+            if (App.Data.Stations.Count == 0)
+                return;
 
-            _stopwatch.Stop();
-            g.DrawString(_stopwatch.ElapsedMilliseconds.ToString(), new Font(Verdana, 10), Brushes.Red, 0, 0);
+            DrawHeader(g);
+            DrawStations(g);
+            DrawGrid(g);
         }
 
         private void DrawHeader(Graphics g)
@@ -78,14 +122,14 @@ namespace GvdEdit
         private void DrawStations(Graphics g)
         {
             int totalMinutes = (HourTo - HourFrom) * 60;
-            int name2X = 500 + (totalMinutes + 10) * MinuteScale;
+            int name2X = OFFSET_X + (totalMinutes + 10) * MinuteScale;
 
             float y, lastY;
-            y = lastY = 200f;
+            y = lastY = OFFSET_Y;
 
             float lastkm = -1;
 
-            g.DrawLine(BLACK2, 400, y + 20, 440, y + 20);
+            g.DrawLine(BLACK2, 400, y + LINE_OFFSET, 440, y + LINE_OFFSET);
 
             Font km = new Font(Verdana, 12);
 
@@ -98,9 +142,9 @@ namespace GvdEdit
 
                 int fontSize = station.StationType == StationType.ZST ? 16 : 12;
 
-                y += 60 + Math.Abs(station.Position - lastkm) * StationScale;
-                
-                station.DrawY = y + 20;
+                y += STATION_OFFSET + Math.Abs(station.Position - lastkm) * StationScale;
+
+                station.DrawY = y + LINE_OFFSET;
 
                 Pen? pen = interlocking switch
                 {
@@ -110,7 +154,7 @@ namespace GvdEdit
                     _ => null,
                 };
                 if (pen is not null)
-                    g.DrawLine(pen, 420, lastY, 420, y + 20);
+                    g.DrawLine(pen, 420, lastY, 420, y + LINE_OFFSET);
 
                 if (!station.Hidden)
                 {
@@ -133,16 +177,16 @@ namespace GvdEdit
 
                 lastkm = station.Position2;
                 interlocking = station.RouteInterlocking;
-                lastY = y + 20;
+                lastY = y + LINE_OFFSET;
 
                 if (station.StationType == StationType.ZST)
-                    g.DrawLine(BLACK2, 400, y + 20, 440, y + 20);
+                    g.DrawLine(BLACK2, 400, y + LINE_OFFSET, 440, y + LINE_OFFSET);
             }
 
-            g.DrawLine(BLACK2, name2X + 360, 220, name2X + 360, y + 80);
-            g.DrawLine(BLACK2, 400, 220, 400, y + 80);
-            g.DrawLine(BLACK2, 400, y + 80, 440, y + 80);
-            g.DrawLine(BLACK2, 440, 220, 440, y + 80);
+            g.DrawLine(BLACK2, name2X + 360, OFFSET_Y + LINE_OFFSET, name2X + 360, y + LINE_OFFSET + LINE_OFFSET + STATION_OFFSET);
+            g.DrawLine(BLACK2, 400, OFFSET_Y + LINE_OFFSET, 400, y + LINE_OFFSET + STATION_OFFSET);
+            g.DrawLine(BLACK2, 400, y + LINE_OFFSET + STATION_OFFSET, 440, y + LINE_OFFSET + STATION_OFFSET);
+            g.DrawLine(BLACK2, 440, OFFSET_Y + LINE_OFFSET, 440, y + LINE_OFFSET + STATION_OFFSET);
         }
 
         private void DrawGrid(Graphics g)
@@ -150,19 +194,19 @@ namespace GvdEdit
             int totalMinutes = (HourTo - HourFrom) * 60;
             int width = (totalMinutes + 10) * MinuteScale;
 
-            g.DrawLine(ORANGE4, 500, 220, 500 + width, 220);
+            g.DrawLine(ORANGE4, OFFSET_X, OFFSET_Y + LINE_OFFSET, OFFSET_X + width, OFFSET_Y + LINE_OFFSET);
 
-            float lastY = 200;
-            float startX = 500 + MinuteScale * 5;
-            
+            float lastY = OFFSET_Y;
+            float startX = OFFSET_X + MinuteScale * 5;
+
             foreach (Station station in App.Data.Stations)
             {
                 if (station.Hidden)
                     continue;
 
                 bool isZST = station.StationType == StationType.ZST;
-                
-                g.DrawLine(isZST ? ORANGE2 : ORANGE1, 500, station.DrawY, 500 + width, station.DrawY);
+
+                g.DrawLine(isZST ? ORANGE2 : ORANGE1, OFFSET_X, station.DrawY, OFFSET_X + width, station.DrawY);
                 lastY = station.DrawY;
 
                 for (int x = 0; x < totalMinutes; x++)
@@ -191,7 +235,7 @@ namespace GvdEdit
                     pen = ORANGE1;
 
                 float dx = startX + x * MinuteScale;
-                g.DrawLine(pen, dx, 220, dx, lastY + 60);
+                g.DrawLine(pen, dx, OFFSET_Y + LINE_OFFSET, dx, lastY + STATION_OFFSET);
             }
 
             for (int h = HourFrom; h <= HourTo; h++)
@@ -200,21 +244,26 @@ namespace GvdEdit
                 string str = h.ToString();
                 SizeF size = g.MeasureString(str, font);
                 float x = startX + (h * 60) * MinuteScale - size.Width / 2f;
-                g.DrawString(str, font, Brushes.Black, x, 220 - size.Height * 1.5f);
-                g.DrawString(str, font, Brushes.Black, x, lastY + 60 + size.Height * 0.5f);
+                g.DrawString(str, font, Brushes.Black, x, OFFSET_Y - size.Height);
+                g.DrawString(str, font, Brushes.Black, x, lastY + LINE_OFFSET + size.Height);
             }
 
-            g.DrawLine(ORANGE4, 500, lastY + 60, 500 + width, lastY + 60);
+            g.DrawLine(ORANGE4, OFFSET_X, lastY + STATION_OFFSET, OFFSET_X + width, lastY + STATION_OFFSET);
 
-            g.DrawLine(ORANGE4, 500, 220, 500, lastY + 60);
-            g.DrawLine(ORANGE4, 500 + width, 220, 500 + width, lastY + 60);
-            g.DrawLine(ORANGE4, 500 + MinuteScale * 5, 220, 500 + MinuteScale * 5, lastY + 60);
-            g.DrawLine(ORANGE4, 500 + width - MinuteScale * 5, 220, 500 + width - MinuteScale * 5, lastY + 60);
+            g.DrawLine(ORANGE4, OFFSET_X, OFFSET_Y + LINE_OFFSET, OFFSET_X, lastY + STATION_OFFSET);
+            g.DrawLine(ORANGE4, OFFSET_X + width, OFFSET_Y + LINE_OFFSET, OFFSET_X + width, lastY + STATION_OFFSET);
+            g.DrawLine(ORANGE4, OFFSET_X + MinuteScale * 5, OFFSET_Y + LINE_OFFSET, OFFSET_X + MinuteScale * 5, lastY + STATION_OFFSET);
+            g.DrawLine(ORANGE4, OFFSET_X + width - MinuteScale * 5, OFFSET_Y + LINE_OFFSET, OFFSET_X + width - MinuteScale * 5, lastY + STATION_OFFSET);
         }
 
         private void Canvas_Click(object sender, System.EventArgs e)
         {
             Canvas.Invalidate();
+        }
+
+        private void ExportButton_Click(object sender, EventArgs e)
+        {
+
         }
     }
 

@@ -17,6 +17,7 @@ namespace GvdEdit
 
         public MainWindow()
         {
+            App.MainWindow = this;
             InitializeComponent();
 
             _gvdForm = new();
@@ -34,6 +35,11 @@ namespace GvdEdit
             _gvdForm.Close();
 
             base.OnClosing(e);
+        }
+
+        internal void StationsChanged()
+        {
+            _gvdForm.UpdateSize();
         }
 
         private void EditStations_Click(object sender, RoutedEventArgs e)

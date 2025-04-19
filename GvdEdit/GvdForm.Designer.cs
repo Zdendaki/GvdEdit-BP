@@ -31,10 +31,11 @@ namespace GvdEdit
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GvdForm));
             Canvas = new PictureBox();
             toolStrip1 = new ToolStrip();
+            ExportButton = new ToolStripButton();
             panel1 = new Panel();
-            toolStripLabel1 = new ToolStripLabel();
             ((System.ComponentModel.ISupportInitialize)Canvas).BeginInit();
             toolStrip1.SuspendLayout();
             panel1.SuspendLayout();
@@ -44,7 +45,7 @@ namespace GvdEdit
             // 
             Canvas.Location = new Point(0, 0);
             Canvas.Name = "Canvas";
-            Canvas.Size = new Size(8000, 2400);
+            Canvas.Size = new Size(100, 100);
             Canvas.TabIndex = 0;
             Canvas.TabStop = false;
             Canvas.Click += Canvas_Click;
@@ -54,29 +55,34 @@ namespace GvdEdit
             // 
             toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripLabel1 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { ExportButton });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(1182, 43);
+            toolStrip1.Size = new Size(1182, 37);
             toolStrip1.TabIndex = 2;
             toolStrip1.Text = "toolStrip1";
+            // 
+            // ExportButton
+            // 
+            ExportButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            ExportButton.Image = (Image)resources.GetObject("ExportButton.Image");
+            ExportButton.ImageTransparentColor = Color.Magenta;
+            ExportButton.Name = "ExportButton";
+            ExportButton.Padding = new Padding(10, 5, 10, 5);
+            ExportButton.Size = new Size(120, 34);
+            ExportButton.Text = "EXPORTOVAT";
+            ExportButton.TextImageRelation = TextImageRelation.TextBeforeImage;
+            ExportButton.Click += ExportButton_Click;
             // 
             // panel1
             // 
             panel1.AutoScroll = true;
             panel1.Controls.Add(Canvas);
             panel1.Dock = DockStyle.Fill;
-            panel1.Location = new Point(0, 43);
+            panel1.Location = new Point(0, 37);
             panel1.Name = "panel1";
-            panel1.Size = new Size(1182, 510);
+            panel1.Size = new Size(1182, 516);
             panel1.TabIndex = 3;
-            // 
-            // toolStripLabel1
-            // 
-            toolStripLabel1.Name = "toolStripLabel1";
-            toolStripLabel1.Padding = new Padding(20, 10, 20, 10);
-            toolStripLabel1.Size = new Size(151, 40);
-            toolStripLabel1.Text = "toolStripLabel1";
             // 
             // GvdForm
             // 
@@ -102,6 +108,6 @@ namespace GvdEdit
         private PictureBox Canvas;
         private ToolStrip toolStrip1;
         private Panel panel1;
-        private ToolStripLabel toolStripLabel1;
+        private ToolStripButton ExportButton;
     }
 }
