@@ -8,7 +8,11 @@ namespace GvdEdit.Models
 {
     public class Station : NotifyPropertyChanged
     {
+        [JsonIgnore]
         internal float DrawY = 0;
+
+        [JsonIgnore]
+        internal int DrawID = 0;
 
         public Guid ID { get; init; } = Guid.NewGuid();
 
@@ -40,6 +44,19 @@ namespace GvdEdit.Models
                     OnPropertyChanged(nameof(Name));
                     OnPropertyChanged(nameof(PrettyName));
                 }
+            }
+        }
+
+        public string SR70
+        {
+            get => field; 
+            set 
+            { 
+                if (field != value) 
+                { 
+                    field = value; 
+                    OnPropertyChanged(nameof(SR70)); 
+                } 
             }
         }
 
@@ -164,7 +181,7 @@ namespace GvdEdit.Models
             if (StationBuilding == StationBuilding.Left)
                 sb.Append("\u25AE ");
             else
-                sb.Append("   ");
+                sb.Append("     ");
 
             if (StationType.HasFlag(StationType.AHr))
                 sb.Append("AHr ");

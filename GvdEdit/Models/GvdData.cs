@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace GvdEdit.Models
 {
-    public class GvdData
+    public class GvdData : NotifyPropertyChanged
     {
         public ObservableCollection<Station> Stations { get; set; } = [];
 
@@ -26,6 +26,45 @@ namespace GvdEdit.Models
 
         [JsonIgnore]
         public ObservableCollection<TrainVM> TrainsVM { get; set; } = [];
+
+        public string TimetableName
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(TimetableName));
+                }
+            }
+        } = string.Empty;
+
+        public string Route
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Route));
+                }
+            }
+        } = string.Empty;
+
+        public string Variant
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Variant));
+                }
+            }
+        } = string.Empty;
 
         public void Initialize()
         {

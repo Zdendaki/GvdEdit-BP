@@ -63,6 +63,7 @@ namespace GvdEdit.ViewModels
                 {
                     field = value;
                     OnPropertyChanged(nameof(DepartureDate));
+                    RecountStops(this, EventArgs.Empty);
                 }
             }
         }
@@ -125,6 +126,7 @@ namespace GvdEdit.ViewModels
                 ID = ID,
                 AdHocPath = AdHocPath,
                 Category = (TrainCategory)Category,
+                Number = Number,
                 Stops = TrainStops.Select(x => x.GetStop()).ToList()
             };
         }
@@ -132,6 +134,13 @@ namespace GvdEdit.ViewModels
         protected void AddStop(Station station)
         {
             var stop = new StopVM(station);
+            stop.StopChanged += RecountStops;
+            TrainStops.Add(stop);
+            RecountStops(this, EventArgs.Empty);
+        }
+
+        public void AddStop(StopVM stop)
+        {
             stop.StopChanged += RecountStops;
             TrainStops.Add(stop);
             RecountStops(this, EventArgs.Empty);
@@ -180,6 +189,8 @@ namespace GvdEdit.ViewModels
                     TrainStops.Add(stop);
                 }
             }
+
+            RecountStops(this, EventArgs.Empty);
         }
 
         public string Name => $"{Enum.GetName((TrainCategory)Category)} {Number}";

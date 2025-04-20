@@ -41,6 +41,13 @@ namespace GvdEdit
         internal static Guid SelectedTrain => MainWindow.Trains.SelectedItem is TrainVM train ? train.ID : Guid.Empty;
 
         internal static string? FileName { get; set; } = null;
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            System.Windows.Forms.Application.EnableVisualStyles();
+            System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+            System.Windows.Forms.Application.SetHighDpiMode(System.Windows.Forms.HighDpiMode.SystemAware);
+        }
     }
 
 }

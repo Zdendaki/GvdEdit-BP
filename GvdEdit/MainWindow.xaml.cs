@@ -151,9 +151,8 @@ namespace GvdEdit
             if (Trains.SelectedItem is not TrainVM train)
                 return;
 
-            bool loadTime = LoadStartTime.IsChecked != true;
-
-            if (!loadTime && !StartTime.Value.HasValue)
+            bool loadExternTime = LoadStartTime.IsChecked == true;
+            if (!loadExternTime && !StartTime.Value.HasValue)
             {
                 MessageBox.Show(this, "Nastavte čas odjezdu vlaku.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -174,7 +173,9 @@ namespace GvdEdit
             try
             {
                 IEnumerable<string> lines = File.ReadAllLines(fileName).Skip(1);
-                TimeSpan offset = loadTime ? TimeSpan.Zero : StartTime.Value!.Value.TimeOfDay;
+                
+                TimeSpan offset = TimeSpan.Zero;
+                TimeSpan lastDeparture = TimeSpan.Zero;
 
                 int i = 0;
                 foreach (string line in lines)
@@ -200,11 +201,16 @@ namespace GvdEdit
                     {
                         arrival = departure;
 
-                        if (!loadTime)
+                        if (!loadExternTime)
                             offset -= departure;
                     }
                     if (last)
+                    {
                         departure = arrival;
+                    }
+
+                    arrival = arrival.RoundUp(30);
+                    departure = departure.RoundUp(30);
 
                     bool stop = parts[0].Equals("Z", StringComparison.OrdinalIgnoreCase);
                     string name = parts[1];
@@ -216,7 +222,17 @@ namespace GvdEdit
                     if (stop && (departure - arrival) < TimeSpan.FromSeconds(30))
                         shortStop = true;
 
-                    train.TrainStops.Add(new StopVM
+                    float travelTime = 0;
+                    float waitTime = 0;
+                    if (i > 0)
+                    {
+                        travelTime = (float)(arrival - lastDeparture).TotalMinutes;
+                    }
+                    lastDeparture = departure;
+
+                    waitTime = (float)(departure - arrival).TotalMinutes;
+
+                    train.AddStop(new StopVM
                     {
                         Station = station,
                         Arrival = arrival + offset,
@@ -224,6 +240,8 @@ namespace GvdEdit
                         ShortStop = shortStop,
                         Starts = first,
                         Ends = last,
+                        WaitTime = waitTime,
+                        TravelTime = travelTime
                     });
                 }
 
@@ -258,6 +276,12 @@ namespace GvdEdit
             {
                 MessageBox.Show(this, ex.Message, "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsWindow sw = new(this);
+            sw.ShowDialog();
         }
     }
 }

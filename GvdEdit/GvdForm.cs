@@ -24,14 +24,21 @@ namespace GvdEdit
         internal bool AllowClose = false;
 
         private Stopwatch _stopwatch = new();
-        private int HourFrom = 6;
-        private int HourTo = 12;
-        private int MinuteScale = 6;
-        private int StationScale = 10;
+        private Point? _lastDragPoint = null;
+
+        private int HourFrom => (int)HourStart.Value;
+
+        private int HourTo => (int)HourEnd.Value;
+
+        private int MinuteScale => (int)ScaleX.Value;
+
+        private int StationScale => (int)ScaleY.Value;
 
         public GvdForm()
         {
             InitializeComponent();
+
+            DoubleBuffered = true;
         }
 
         internal Size ComputeSize()
@@ -96,7 +103,7 @@ namespace GvdEdit
             Draw(e.Graphics);
 
             _stopwatch.Stop();
-            e.Graphics.DrawString(_stopwatch.ElapsedMilliseconds.ToString(), new Font(Verdana, 10), Brushes.Red, 0, 0);
+            e.Graphics.DrawString(_stopwatch.ElapsedMilliseconds.ToString(), new Font(Verdana, 10, FontStyle.Bold), Brushes.Red, 0, 0);
         }
 
         private void Draw(Graphics g)
@@ -119,11 +126,11 @@ namespace GvdEdit
         private void DrawHeader(Graphics g)
         {
             g.DrawString("Nákresný jízdní řád", new Font(Verdana, 24, FontStyle.Bold), SZ_BLUE, 200, 20);
-            g.DrawString("Jízdní řád 2025", new Font(Verdana, 20, FontStyle.Bold), SZ_ORGE, 200, 80);
-            g.DrawString("302A", new Font(Verdana, 48, FontStyle.Bold), SZ_ORGE, 760, 20);
+            g.DrawString(App.Data.TimetableName, new Font(Verdana, 20, FontStyle.Bold), SZ_ORGE, 200, 80);
+            g.DrawString(App.Data.Route, new Font(Verdana, 48, FontStyle.Bold), SZ_ORGE, 760, 20);
             g.DrawString($"{HourFrom}-{HourTo}", new Font(Verdana, 30, FontStyle.Regular), Brushes.Black, 1100, 36);
             g.DrawString($"{App.Data.Stations.First().Name} - {App.Data.Stations.Last().Name}", new Font(Verdana, 24, FontStyle.Bold), Brushes.Black, 1300, 20);
-            g.DrawString("VARIANTA ZÁKLADNÍ", new Font(Verdana, 20, FontStyle.Bold), SZ_BLUE, 1300, 80);
+            g.DrawString(App.Data.Variant, new Font(Verdana, 20, FontStyle.Bold), SZ_BLUE, 1300, 80);
         }
 
         private void DrawStations(Graphics g)
@@ -142,6 +149,7 @@ namespace GvdEdit
 
             RouteInterlocking interlocking = RouteInterlocking.None;
 
+            int id = 0;
             foreach (Station station in App.Data.Stations)
             {
                 if (lastkm < 0)
@@ -152,6 +160,7 @@ namespace GvdEdit
                 y += STATION_OFFSET + Math.Abs(station.Position - lastkm) * StationScale;
 
                 station.DrawY = y + LINE_OFFSET;
+                station.DrawID = id++;
 
                 Pen? pen = interlocking switch
                 {
@@ -221,6 +230,9 @@ namespace GvdEdit
                     int deltaY = isZST ? 5 : 3;
                     float dx = startX + x * MinuteScale;
 
+                    if (!g.VisibleClipBounds.ContainsX(dx))
+                        continue;
+
                     if (x % 10 == 0)
                         continue;
 
@@ -233,6 +245,10 @@ namespace GvdEdit
 
             for (int x = 10; x < totalMinutes; x += 10)
             {
+                float dx = startX + x * MinuteScale;
+                if (!g.VisibleClipBounds.ContainsX(dx))
+                    continue;
+
                 Pen pen;
                 if (x % 60 == 0)
                     pen = ORANGE2;
@@ -241,7 +257,6 @@ namespace GvdEdit
                 else
                     pen = ORANGE1;
 
-                float dx = startX + x * MinuteScale;
                 g.DrawLine(pen, dx, OFFSET_Y + LINE_OFFSET, dx, lastY + STATION_OFFSET);
             }
 
@@ -266,6 +281,8 @@ namespace GvdEdit
         private void DrawTrains(Graphics g)
         {
             Font font = new Font(Verdana, 10, FontStyle.Bold);
+            int totalMinutes = (HourTo - HourFrom) * 60;
+            int width = (totalMinutes + 10) * MinuteScale;
 
             foreach (Train train in App.Data.Trains)
             {
@@ -294,21 +311,30 @@ namespace GvdEdit
                     Station s1 = getStation(st1);
                     Station s2 = getStation(st2);
 
-                    PointF p1 = GetPoint(s1, st1.Departure);
-                    PointF p2 = GetPoint(s2, st2.Arrival);
+                    PointF p1 = GetPoint(s1, st1.Departure, out bool ip1);
+                    PointF p2 = GetPoint(s2, st2.Arrival, out bool ip2);
 
-                    if (p1 == PointF.Empty || p2 == PointF.Empty)
+                    if (ip1 && ip2)
                         continue;
+
+                    if (ip1)
+                        p1 = CalculatePointX(p1, p2, OFFSET_X);
+                    if (ip2)
+                        p2 = CalculatePointX(p1, p2, OFFSET_X + width);
 
                     bool directionDown = p2.Y > p1.Y;
 
-                    if (i == 0)
+                    if (i == 0 && !ip1)
                         pointDecor(p1, st1, directionDown, 0);
 
-                    pointDecor(p2, st2, directionDown, p2.X - p1.X);
+                    if (!ip2)
+                        pointDecor(p2, st2, directionDown, p2.X - p1.X);
 
                     points.Add(p1);
                     points.Add(p2);
+
+                    if ((s1.DrawID % 2 == 0 || train.Stops.Count < 3) && !ip1 && !ip2)
+                        DrawTrainNumber(g, train, p1, p2, pen.Brush);
 
                     if ((st2.Departure - st2.Arrival) > TimeSpan.FromMinutes(1))
                     {
@@ -348,10 +374,46 @@ namespace GvdEdit
             Station getStation(Stop stop) => App.Data.Stations.First(x => x.ID == stop.Station);
         }
 
-        private PointF GetPoint(Station station, TimeSpan time)
+        private PointF CalculatePointX(PointF p1, PointF p2, float x)
+        {
+            float slope = MathF.Abs(p2.Y - p1.Y) / MathF.Abs(p2.X - p1.X);
+            float relX;
+
+            if (p1.Y > p2.Y)
+                relX = MathF.Max(p1.X, p2.X) - x;
+            else
+                relX = x - MathF.Min(p1.X, p2.X);
+
+            return new PointF(x, slope * relX + MathF.Min(p1.Y, p2.Y));
+        }
+
+        private void DrawTrainNumber(Graphics g, Train train, PointF p1, PointF p2, Brush color)
+        {
+            const float DEG = 180f / MathF.PI;
+
+            float angle = MathF.Atan2(p2.Y - p1.Y, p2.X - p1.X) * DEG;
+            PointF middle = new((p1.X + p2.X) / 2f, (p1.Y + p2.Y) / 2f);
+            string text = train.Number.ToString();
+
+            DrawRotatedText(g, middle.X, middle.Y, angle, text, new(Verdana, 14), color);
+        }
+
+        private static void DrawRotatedText(Graphics g, float x, float y, float angle, string text, Font font, Brush brush)
+        {
+            g.TranslateTransform(x, y);
+            g.RotateTransform(angle);
+            g.TranslateTransform(-x, -y);
+            SizeF size = g.MeasureString(text, font);
+            g.DrawString(text, font, brush, new PointF(x - size.Width / 2.0f, y - size.Height));
+            g.ResetTransform();
+        }
+
+        private PointF GetPoint(Station station, TimeSpan time, out bool incomplete)
         {
             if (time.TotalMinutes < HourFrom * 60 - 5 || time.TotalMinutes > HourTo * 60 + 5)
-                return PointF.Empty;
+                incomplete = true;
+            else
+                incomplete = false;
 
             float minutes = (float)time.TotalMinutes - HourFrom * 60 + 5;
             float x = OFFSET_X + minutes * MinuteScale;
@@ -401,6 +463,94 @@ namespace GvdEdit
             {
                 MessageBox.Show(this, $"Chyba při exportu obrázku: {ex.Message}", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void ValueChanged(object sender, EventArgs e)
+        {
+            HourStart.Maximum = HourEnd.Value - 1;
+            HourEnd.Minimum = HourStart.Value + 1;
+
+            UpdateSize();
+            Redraw();
+        }
+
+        private void MoveLeft_Click(object sender, EventArgs e)
+        {
+            if (HourStart.Value == 0)
+                return;
+
+            HourStart.Value--;
+            HourEnd.Value--;
+        }
+
+        private void MoveRight_Click(object sender, EventArgs e)
+        {
+            if (HourEnd.Value == 24)
+                return;
+
+            HourStart.Value++;
+            HourEnd.Value++;
+        }
+
+        private void RefreshButton_Click(object sender, EventArgs e)
+        {
+            Redraw();
+        }
+
+        private void Canvas_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _lastDragPoint = Cursor.Position;
+                Canvas.Cursor = Cursors.SizeAll;
+            }
+        }
+
+        private void Canvas_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _lastDragPoint = null;
+                Canvas.Cursor = Cursors.Default;
+            }
+        }
+
+        private void Canvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left)
+            {
+                if (_lastDragPoint.HasValue)
+                {
+                    _lastDragPoint = null;
+                    Canvas.Cursor = Cursors.Default;
+                }
+                return;
+            }
+
+            if (!_lastDragPoint.HasValue)
+            {
+                _lastDragPoint = Cursor.Position;
+                Canvas.Cursor = Cursors.SizeAll;
+                return;
+            }
+
+            Point currentMousePos = Cursor.Position;
+
+            int deltaX = _lastDragPoint.Value.X - currentMousePos.X;
+            int deltaY = _lastDragPoint.Value.Y - currentMousePos.Y;
+
+            _lastDragPoint = currentMousePos;
+
+            if (deltaX == 0 && deltaY == 0)
+            {
+                return;
+            }
+
+            Point currentScroll = ScrollPanel.AutoScrollPosition;
+
+            int targetScrollX = -currentScroll.X + deltaX;
+            int targetScrollY = -currentScroll.Y + deltaY;
+            ScrollPanel.AutoScrollPosition = new Point(targetScrollX, targetScrollY);
         }
     }
 

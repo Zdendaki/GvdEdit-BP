@@ -8,7 +8,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         d:DataContext="{d:DesignInstance models:GvdData}"
         mc:Ignorable="d"
-        Title="Úprava dopravních bodů" Height="450" Width="1000">
+        Title="Úprava dopravních bodů" Height="500" Width="1000">
 
     <Window.Resources>
         <local:BoolToStringConverter x:Key="BoolToString" />
@@ -64,6 +64,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Label Content="Typ bodu:" Grid.Row="0" Grid.Column="0" Margin="5"/>
@@ -78,31 +79,34 @@
                 </ComboBox>
 
                 <Label Content="Název bodu:" Grid.Row="1" Grid.Column="0" Margin="5"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Margin="5" Text="{Binding Name}" />
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="5" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
 
-                <CheckBox Grid.Row="2" Grid.Column="1" Margin="5,10" Content="Stanice je skryta" IsChecked="{Binding Hidden}" />
+                <Label Content="SR70:" Grid.Row="2" Grid.Column="0" Margin="5"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Margin="5" Text="{Binding SR70}" MaxLength="10" />
 
-                <Label Content="Koleje vlevo:" Grid.Row="3" Grid.Column="0" Margin="5"/>
-                <xctk:IntegerUpDown Grid.Row="3" Grid.Column="1" Margin="5" Value="{Binding TracksLeft}" Minimum="0" />
+                <CheckBox Grid.Row="3" Grid.Column="1" Margin="5,10" Content="Stanice je skryta" IsChecked="{Binding Hidden, UpdateSourceTrigger=PropertyChanged}" />
 
-                <Label Content="Koleje vpravo:" Grid.Row="4" Grid.Column="0" Margin="5"/>
-                <xctk:IntegerUpDown Grid.Row="4" Grid.Column="1" Margin="5" Value="{Binding TracksRight}" Minimum="0" />
+                <Label Content="Koleje vlevo:" Grid.Row="4" Grid.Column="0" Margin="5"/>
+                <xctk:IntegerUpDown Grid.Row="4" Grid.Column="1" Margin="5" Value="{Binding TracksLeft, UpdateSourceTrigger=PropertyChanged}" Minimum="0" />
 
-                <Label Content="Kilometráž:" Grid.Row="5" Grid.Column="0" Margin="5"/>
-                <xctk:DecimalUpDown Grid.Row="5" Grid.Column="1" Margin="5" Value="{Binding Position}" FormatString="0.000" Minimum="0" />
+                <Label Content="Koleje vpravo:" Grid.Row="5" Grid.Column="0" Margin="5"/>
+                <xctk:IntegerUpDown Grid.Row="5" Grid.Column="1" Margin="5" Value="{Binding TracksRight, UpdateSourceTrigger=PropertyChanged}" Minimum="0" />
 
-                <Label Content="Skok kilometráže:" Grid.Row="6" Grid.Column="0" Margin="5"/>
-                <xctk:DecimalUpDown Grid.Row="6" Grid.Column="1" Margin="5" Value="{Binding Position2}" FormatString="0.000" Minimum="0" />
+                <Label Content="Kilometráž:" Grid.Row="6" Grid.Column="0" Margin="5"/>
+                <xctk:DecimalUpDown Grid.Row="6" Grid.Column="1" Margin="5" Value="{Binding Position, UpdateSourceTrigger=PropertyChanged}" FormatString="0.000" Minimum="0" />
 
-                <Label Content="Pozice budovy:" Grid.Row="7" Grid.Column="0" Margin="5"/>
-                <ComboBox Grid.Row="7" Grid.Column="1" Margin="5" SelectedIndex="{Binding StationBuildingBinding}">
+                <Label Content="Skok kilometráže:" Grid.Row="7" Grid.Column="0" Margin="5"/>
+                <xctk:DecimalUpDown Grid.Row="7" Grid.Column="1" Margin="5" Value="{Binding Position2, UpdateSourceTrigger=PropertyChanged}" FormatString="0.000" Minimum="0" />
+
+                <Label Content="Pozice budovy:" Grid.Row="8" Grid.Column="0" Margin="5"/>
+                <ComboBox Grid.Row="8" Grid.Column="1" Margin="5" SelectedIndex="{Binding StationBuildingBinding}">
                     <ComboBoxItem Content="žádná/mimoúrovňový přístup" />
                     <ComboBoxItem Content="vlevo" />
                     <ComboBoxItem Content="vpravo" />
                 </ComboBox>
 
-                <Label Content="TZZ:" Grid.Row="8" Grid.Column="0" Margin="5"/>
-                <ComboBox Grid.Row="8" Grid.Column="1" Margin="5" SelectedIndex="{Binding RouteInterlockingBinding}">
+                <Label Content="TZZ:" Grid.Row="9" Grid.Column="0" Margin="5"/>
+                <ComboBox Grid.Row="9" Grid.Column="1" Margin="5" SelectedIndex="{Binding RouteInterlockingBinding}">
                     <ComboBoxItem Content="žádné" />
                     <ComboBoxItem Content="telefonické dorozumívání" />
                     <ComboBoxItem Content="poloautomatický blok" />
@@ -110,8 +114,8 @@
                     <ComboBoxItem Content="jednosměrné TZZ" />
                 </ComboBox>
 
-                <Label Content="Traťové koleje:" Grid.Row="9" Grid.Column="0" Margin="5"/>
-                <xctk:IntegerUpDown Grid.Row="9" Grid.Column="1" Margin="5" Value="{Binding RouteTracks}" Minimum="1" />
+                <Label Content="Traťové koleje:" Grid.Row="10" Grid.Column="0" Margin="5"/>
+                <xctk:IntegerUpDown Grid.Row="10" Grid.Column="1" Margin="5" Value="{Binding RouteTracks, UpdateSourceTrigger=PropertyChanged}" Minimum="1" />
             </Grid>
         </GroupBox>
     </Grid>
