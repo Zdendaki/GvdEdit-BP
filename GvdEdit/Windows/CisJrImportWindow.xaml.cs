@@ -35,11 +35,18 @@ namespace GvdEdit.Windows
             if (result != true)
                 return;
 
-            await LoadProgress.Dispatcher.BeginInvoke(() => LoadProgress.IsIndeterminate = true);
+            await Task.Run(() => LoadSracka(ofd.FolderName));
 
+
+        }
+
+        private async Task LoadSracka(string filename)
+        {
             try
             {
-                DirectoryInfo di = new(ofd.FolderName);
+                await LoadProgress.Dispatcher.BeginInvoke(() => LoadProgress.IsIndeterminate = true);
+
+                DirectoryInfo di = new(filename);
                 IEnumerable<FileInfo> files = di.EnumerateFiles("*.xml", SearchOption.AllDirectories);
 
                 int count = files.Count();
@@ -58,7 +65,7 @@ namespace GvdEdit.Windows
 
                 foreach (FileInfo file in files)
                 {
-                    await LoadTrain(file.FullName);
+                    LoadTrain(file.FullName);
                     await LoadProgress.Dispatcher.BeginInvoke(() => LoadProgress.Value++);
                 }
             }
@@ -76,7 +83,7 @@ namespace GvdEdit.Windows
             }
         }
 
-        private async Task LoadTrain(string fileName)
+        private void LoadTrain(string fileName)
         {
             using FileStream fs = new(fileName, FileMode.Open, FileAccess.Read);
             using XmlReader reader = XmlReader.Create(fs);
