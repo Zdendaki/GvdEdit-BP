@@ -10,19 +10,7 @@ namespace GvdEdit.Models
     {
         public ObservableCollection<Station> Stations { get; set; } = [];
 
-        public List<Train> Trains
-        {
-            get => TrainsVM.Select(x => x.GetTrain()).ToList();
-            set
-            {
-                TrainsVM.Clear();
-                foreach (var train in value)
-                {
-                    var trainVM = new TrainVM(train);
-                    TrainsVM.Add(trainVM);
-                }
-            }
-        }
+        public List<Train> Trains { get; set; } = [];
 
         [JsonIgnore]
         public ObservableCollection<TrainVM> TrainsVM { get; set; } = [];
@@ -66,9 +54,22 @@ namespace GvdEdit.Models
             }
         } = string.Empty;
 
-        public void Initialize()
+        public void PrepareTrains()
         {
-
+            ClearTrains();
+            Trains.AddRange(GetTrains());
         }
+
+        public void LoadTrains()
+        {
+            TrainsVM.Clear();
+            foreach (var train in Trains)
+                TrainsVM.Add(new(train));
+            ClearTrains();
+        }
+
+        public void ClearTrains() => Trains.Clear();
+
+        public IEnumerable<Train> GetTrains() => TrainsVM.Select(x => x.GetTrain());
     }
 }

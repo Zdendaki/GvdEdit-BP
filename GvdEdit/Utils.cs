@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace GvdEdit
@@ -54,6 +55,50 @@ namespace GvdEdit
         public static bool ContainsY(this RectangleF rectangle, float y)
         {
             return y >= rectangle.Top && y <= rectangle.Bottom;
+        }
+
+        /// <summary>
+        /// Najde n bodů ležících na úsečce mezi p1 a p2 (nezahrnuje p1 a p2).
+        /// Těchto n bodů rozděluje úsečku spolu s krajními body p1 a p2
+        /// na (n + 1) stejně dlouhých segmentů.
+        /// </summary>
+        /// <param name="p1">Počáteční bod úsečky.</param>
+        /// <param name="p2">Koncový bod úsečky.</param>
+        /// <param name="n">Počet bodů k nalezení mezi p1 a p2 (musí být >= 0).</param>
+        /// <returns>
+        /// Seznam n bodů mezi p1 a p2. Pokud n=0, vrací prázdný seznam.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">Pokud je n menší než 0.</exception>
+        public static List<PointF> GetPointsOnLine(PointF p1, PointF p2, int n)
+        {
+            if (n < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(n), "Počet bodů (n) nesmí být záporný.");
+            }
+
+            var points = new List<PointF>(n);
+
+            if (n == 0)
+            {
+                return points;
+            }
+
+            // Vzorec pro t_i = (2*i - 1) / (2*n), kde i jde od 1 do n.
+            // Vypočítáme body pomocí lineární interpolace: P = P1 + t * (P2 - P1)
+            for (int i = 1; i <= n; i++) // i jde od 1 do n
+            {
+                // Vypočteme interpolační faktor t pro i-tý bod
+                // Používáme float literály pro přesnost
+                float t = (2.0f * i - 1.0f) / (2.0f * n);
+
+                // Vypočítáme souřadnice nového bodu (pomocí float)
+                float x = p1.X + t * (p2.X - p1.X);
+                float y = p1.Y + t * (p2.Y - p1.Y);
+
+                points.Add(new PointF(x, y));
+            }
+
+            return points;
         }
     }
 }

@@ -77,6 +77,7 @@ namespace GvdEdit
                     return;
 
                 App.Data = data;
+                App.Data.LoadTrains();
                 App.FileName = fileName;
                 Save.IsEnabled = true;
                 DataContext = App.Data;
@@ -113,6 +114,7 @@ namespace GvdEdit
         {
             try
             {
+                App.Data.PrepareTrains();
                 string json = Newtonsoft.Json.JsonConvert.SerializeObject(App.Data);
                 File.WriteAllText(fileName, json);
 
@@ -122,6 +124,10 @@ namespace GvdEdit
             catch (Exception ex)
             {
                 MessageBox.Show(this, ex.Message, "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                App.Data.ClearTrains();
             }
         }
 
@@ -140,6 +146,15 @@ namespace GvdEdit
             train.CreateStops(IgnoreHidden.IsChecked == true);
         }
 
+        private void DeleteTrain_Click(object sender, RoutedEventArgs e)
+        {
+            if (Trains.SelectedItem is not TrainVM train)
+                return;
+
+            App.Data.TrainsVM.Remove(train);
+            RedrawGVD();
+        }
+
         private void Trains_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             TrainGroupBox.IsEnabled = Trains.SelectedIndex >= 0;
@@ -148,7 +163,7 @@ namespace GvdEdit
 
         private void RailCalcImport_Click(object sender, RoutedEventArgs e)
         {
-            if (Trains.SelectedItem is not TrainVM train)
+            if (Trains.SelectedItem is not TrainVM train || Category.SelectedItem is not TrainCategoryItem category)
                 return;
 
             bool loadExternTime = LoadStartTime.IsChecked == true;
@@ -236,7 +251,8 @@ namespace GvdEdit
                         ShortStop = shortStop,
                         Starts = first,
                         Ends = last,
-                        WaitTime = waitTime
+                        WaitTime = waitTime,
+                        Category = category.Category
                     });
                 }
 

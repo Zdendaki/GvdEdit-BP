@@ -112,9 +112,10 @@ namespace GvdEdit.ViewModels
 
         public TrainVM(Train train)
         {
+            Initializing = true;
+
             ID = train.ID;
             Number = train.Number;
-            Category = train.Category;
             AdHocPath = train.AdHocPath;
             DepartureTime = train.Stops.First().Departure;
             StationFrom = App.Data.Stations.First(x => x.ID == train.Stops.First().Station);
@@ -126,6 +127,19 @@ namespace GvdEdit.ViewModels
                 stopVM.StopChanged += RecountStops;
                 TrainStops.Add(stopVM);
             }
+
+            for (int i = 0; i < TrainStops.Count - 1; i++)
+            {
+                StopVM current = TrainStops[i];
+                StopVM next = TrainStops[i + 1];
+
+                if (i == 0)
+                    Category = current.Category;
+
+                current.TravelTime = (float)(next.Arrival - current.Departure).TotalMinutes;
+            }
+
+            Initializing = false;
         }
 
         public Train GetTrain()

@@ -34,6 +34,8 @@ namespace GvdEdit
 
         private int StationScale => (int)ScaleY.Value;
 
+        private int NumberFrequency => (int)TrainNumberFrequency.Value;
+
         public GvdForm()
         {
             InitializeComponent();
@@ -106,7 +108,7 @@ namespace GvdEdit
             e.Graphics.DrawString(_stopwatch.ElapsedMilliseconds.ToString(), new Font(Verdana, 10, FontStyle.Bold), Brushes.Red, 0, 0);
         }
 
-        private void Draw(Graphics g)
+        private void Draw(Graphics g, bool export = false)
         {
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
             g.CompositingQuality = CompositingQuality.HighQuality;
@@ -120,7 +122,7 @@ namespace GvdEdit
             DrawHeader(g);
             DrawStations(g);
             DrawGrid(g);
-            DrawTrains(g);
+            DrawTrains(g, export);
         }
 
         private void DrawHeader(Graphics g)
@@ -158,7 +160,7 @@ namespace GvdEdit
 
                 int fontSize = station.StationType == StationType.ZST ? 16 : 12;
 
-                int offset = lastHidden ? 0 : STATION_OFFSET;
+                int offset = lastHidden ? STATION_OFFSET / 3 : STATION_OFFSET;
                 y += offset + Math.Abs(station.Position - lastkm) * StationScale;
 
                 lastHidden = station.Hidden;
@@ -283,18 +285,20 @@ namespace GvdEdit
             g.DrawLine(ORANGE4, OFFSET_X + width - MinuteScale * 5, OFFSET_Y + LINE_OFFSET, OFFSET_X + width - MinuteScale * 5, lastY + STATION_OFFSET);
         }
 
-        private void DrawTrains(Graphics g)
+        private void DrawTrains(Graphics g, bool export)
         {
             Font font = new Font(Verdana, 10, FontStyle.Bold);
             int totalMinutes = (HourTo - HourFrom) * 60;
             int width = (totalMinutes + 10) * MinuteScale;
-
-            foreach (Train train in App.Data.Trains)
+            PointF? savedP1 = null;
+            
+            foreach (Train train in App.Data.GetTrains())
             {
                 if (train.Stops.Count < 2)
                     continue;
 
                 List<PointF> points = new((train.Stops.Count - 1) * 2);
+                List<PointF> svPoints = [];
 
                 Pen pen = BLACK1;
                 for (int i = 0; i < train.Stops.Count - 1; i++)
@@ -329,25 +333,45 @@ namespace GvdEdit
                     points.Add(p1);
                     points.Add(p2);
 
-                    if ((s1.DrawID % 2 == 0 || train.Stops.Count < 3) && !ip1 && !ip2)
-                        DrawTrainNumber(g, train, p1, p2, pen.Brush);
+                    if (st1.Category == TrainCategory.Sv)
+                        svPoints.AddRange(GetSvPoints(p1, p2));
+
+                    if ((s1.DrawID % NumberFrequency == 0 || (train.Stops.Count <= NumberFrequency && !train.Drawn)) && !ip1 && !ip2 && !s1.Hidden)
+                    {
+                        if (s2.Hidden)
+                            savedP1 = p1;
+                        else
+                            DrawTrainNumber(g, st1, train, p1, p2, pen.Brush);
+                    }
+                    else if (savedP1.HasValue && !s2.Hidden)
+                    {
+                        DrawTrainNumber(g, st1, train, savedP1.Value, p2, pen.Brush);
+                        savedP1 = null;
+                    }
 
                     if ((st2.Departure - st2.Arrival) > TimeSpan.FromMinutes(1) || st1.Category != st2.Category)
                     {
                         g.DrawLines(pen, points.ToArray());
                         points.Clear();
                     }
+
+                    if (st1.Category != st2.Category)
+                        train.Drawn = false;
                 }
 
                 if (points.Count > 0)
                     g.DrawLines(pen, points.ToArray());
 
-                static Pen getPen(Train train, Stop stop)
+                DrawSv(g, svPoints);
+
+                Pen getPen(Train train, Stop stop)
                 {
-                    if (train.ID == App.SelectedTrain)
+                    if (train.ID == App.SelectedTrain && !export)
                         return GREEN4;
                     else if (stop.Category < TrainCategory.Os || stop.Category == TrainCategory.Pom)
                         return BLACK4;
+                    else if (stop.Category == TrainCategory.Sv)
+                        return BLACK1;
                     else if (stop.Category < TrainCategory.Nex)
                         return BLACK2;
                     else if (stop.Category == TrainCategory.Nex)
@@ -361,7 +385,7 @@ namespace GvdEdit
                 void pointDecor(in PointF point, Stop stop, bool directionDown, float delta)
                 {
                     if (stop.Starts || stop.Ends)
-                        g.FillEllipse(pen.Brush, point.X - 6, point.Y - 6, 12, 12);
+                        g.FillEllipse(pen.Brush, point.X - 5, point.Y - 5, 10, 10);
 
                     string decor;
                     if (stop.ShortStop)
@@ -399,15 +423,35 @@ namespace GvdEdit
             return new PointF(x, slope * relX + MathF.Min(p1.Y, p2.Y));
         }
 
-        private void DrawTrainNumber(Graphics g, Train train, PointF p1, PointF p2, Brush color)
+        private void DrawTrainNumber(Graphics g, Stop stop, Train train, PointF p1, PointF p2, Brush color)
         {
             const float DEG = 180f / MathF.PI;
 
             float angle = MathF.Atan2(p2.Y - p1.Y, p2.X - p1.X) * DEG;
             PointF middle = new((p1.X + p2.X) / 2f, (p1.Y + p2.Y) / 2f);
+            float size = (stop.Category < TrainCategory.Os || stop.Category == TrainCategory.Nex) ? 14 : 12;
             string text = train.Number.ToString();
 
-            DrawRotatedText(g, middle.X, middle.Y, angle, text, new(Verdana, 14), color);
+            train.Drawn = true;
+
+            DrawRotatedText(g, middle.X, middle.Y, angle, text, new(Verdana, size), color);
+        }
+
+        private List<PointF> GetSvPoints(PointF p1, PointF p2)
+        {
+            int distance = (int)MathF.Sqrt(MathF.Pow(p2.X - p1.X, 2) + MathF.Pow(p2.Y - p1.Y, 2));
+            int count = distance / 25;
+            return Utils.GetPointsOnLine(p1, p2, count);
+        }
+
+        private void DrawSv(Graphics g, List<PointF> points)
+        {
+            foreach (PointF point in points)
+            {
+                RectangleF rect = new(point.X - 5, point.Y - 5, 10, 10);
+                g.FillEllipse(Brushes.White, rect);
+                g.DrawEllipse(BLACK1, rect);
+            }
         }
 
         private static void DrawRotatedText(Graphics g, float x, float y, float angle, string text, Font font, Brush brush)
@@ -452,7 +496,7 @@ namespace GvdEdit
             Size size = ComputeSize();
             using Bitmap bitmap = new(size.Width, size.Height);
             using (Graphics g = Graphics.FromImage(bitmap))
-                Draw(g);
+                Draw(g, true);
 
             string fileName = App.Data.Stations.First().Name + " - " + App.Data.Stations.Last().Name + ".png";
             using SaveFileDialog dialog = new()

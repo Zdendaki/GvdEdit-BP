@@ -23,7 +23,7 @@
 
         <ListBox Grid.Row="1" Margin="5" />
 
-        <GroupBox Grid.Row="1" Grid.Column="1" Margin="5,0,5,5" Header="Detail vlaku">
+        <GroupBox Grid.Row="1" Grid.Column="1" Margin="3,0,3,3" Header="Detail vlaku">
             
         </GroupBox>
 

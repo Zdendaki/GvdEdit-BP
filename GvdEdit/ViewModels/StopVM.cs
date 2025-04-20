@@ -204,6 +204,8 @@ namespace GvdEdit.ViewModels
             Starts = stop.Starts;
             Ends = stop.Ends;
             Category = stop.Category;
+
+            WaitTime = (float)(Departure - Arrival).TotalMinutes;
         }
 
         public Stop GetStop()

@@ -1,10 +1,14 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace GvdEdit.Models
 {
     public class Train
     {
+        [JsonIgnore]
+        internal bool Drawn = false;
+
         public Guid ID { get; init; } = Guid.NewGuid();
 
         public int Number { get; set; }
@@ -56,6 +60,8 @@ namespace GvdEdit.Models
         Vlec,
         Sluz,
         Lv,
-        Pom
+        Pom,
+
+        Invalid = 65535
     }
 }

@@ -68,14 +68,14 @@
 
                 <ListBox x:Name="Trains" ItemsSource="{Binding Source={StaticResource TrainsView}}" DisplayMemberPath="Name" x:FieldModifier="internal" SelectionChanged="Trains_SelectionChanged" />
 
-                <xctk:DropDownButton x:Name="NewTrain" Grid.Row="1" Margin="0,5" Content="Nový vlak" Padding="5" Click="NewTrain_Click">
-                    <xctk:DropDownButton.DropDownContent>
+                <xctk:SplitButton x:Name="NewTrain" Grid.Row="1" Margin="0,5" Content="Nový vlak" Padding="5" Click="NewTrain_Click">
+                    <xctk:SplitButton.DropDownContent>
                         <StackPanel>
-                            <MenuItem Header="Odstranit vlak" />
+                            <MenuItem Header="Odstranit vlak" Click="DeleteTrain_Click" />
                             <MenuItem Header="Duplikovat vlak" />
                         </StackPanel>
-                    </xctk:DropDownButton.DropDownContent>
-                </xctk:DropDownButton>
+                    </xctk:SplitButton.DropDownContent>
+                </xctk:SplitButton>
             </Grid>
         </GroupBox>
 
@@ -96,7 +96,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Grid.Row="0" Grid.Column="0" Content="Kategorie:" Margin="5" />
-                <ComboBox Grid.Row="0" Grid.Column="1" Margin="5" SelectedIndex="{Binding Category}" ItemsSource="{StaticResource Categories}" SelectedValuePath="Category" />
+                <ComboBox x:Name="Category" Grid.Row="0" Grid.Column="1" Margin="5" SelectedValue="{Binding Category}" ItemsSource="{StaticResource Categories}" SelectedValuePath="Category" />
 
                 <Label Grid.Row="0" Grid.Column="2" Content="Číslo vlaku:" Margin="5" />
                 <xctk:IntegerUpDown Grid.Row="0" Grid.Column="3" Margin="5" ShowButtonSpinner="False" Minimum="1" Maximum="899999" TextAlignment="Left" Value="{Binding Number}" />

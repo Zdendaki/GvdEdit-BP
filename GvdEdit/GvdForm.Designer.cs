@@ -41,6 +41,8 @@ namespace GvdEdit
             ScaleY = new NumericUpDown();
             flowLayoutPanel1 = new FlowLayoutPanel();
             ExportButton = new Button();
+            label3 = new Label();
+            TrainNumberFrequency = new NumericUpDown();
             MoveLeft = new Button();
             MoveRight = new Button();
             RefreshButton = new Button();
@@ -51,6 +53,7 @@ namespace GvdEdit
             ((System.ComponentModel.ISupportInitialize)ScaleX).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ScaleY).BeginInit();
             flowLayoutPanel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)TrainNumberFrequency).BeginInit();
             SuspendLayout();
             // 
             // Canvas
@@ -73,7 +76,7 @@ namespace GvdEdit
             ScrollPanel.Location = new Point(0, 39);
             ScrollPanel.Margin = new Padding(3, 39, 3, 3);
             ScrollPanel.Name = "ScrollPanel";
-            ScrollPanel.Size = new Size(1182, 514);
+            ScrollPanel.Size = new Size(1582, 514);
             ScrollPanel.TabIndex = 3;
             // 
             // HourStart
@@ -153,6 +156,8 @@ namespace GvdEdit
             flowLayoutPanel1.Controls.Add(label2);
             flowLayoutPanel1.Controls.Add(ScaleX);
             flowLayoutPanel1.Controls.Add(ScaleY);
+            flowLayoutPanel1.Controls.Add(label3);
+            flowLayoutPanel1.Controls.Add(TrainNumberFrequency);
             flowLayoutPanel1.Controls.Add(MoveLeft);
             flowLayoutPanel1.Controls.Add(MoveRight);
             flowLayoutPanel1.Controls.Add(RefreshButton);
@@ -160,7 +165,7 @@ namespace GvdEdit
             flowLayoutPanel1.Location = new Point(0, 0);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
             flowLayoutPanel1.Padding = new Padding(5);
-            flowLayoutPanel1.Size = new Size(1182, 39);
+            flowLayoutPanel1.Size = new Size(1582, 39);
             flowLayoutPanel1.TabIndex = 10;
             // 
             // ExportButton
@@ -175,9 +180,30 @@ namespace GvdEdit
             ExportButton.UseVisualStyleBackColor = true;
             ExportButton.Click += ExportButton_Click;
             // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(611, 8);
+            label3.Margin = new Padding(10, 3, 0, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(133, 20);
+            label3.TabIndex = 13;
+            label3.Text = "Četnost čísel vlaku:";
+            // 
+            // TrainNumberFrequency
+            // 
+            TrainNumberFrequency.Location = new Point(744, 5);
+            TrainNumberFrequency.Margin = new Padding(0);
+            TrainNumberFrequency.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            TrainNumberFrequency.Name = "TrainNumberFrequency";
+            TrainNumberFrequency.Size = new Size(50, 27);
+            TrainNumberFrequency.TabIndex = 14;
+            TrainNumberFrequency.Value = new decimal(new int[] { 2, 0, 0, 0 });
+            TrainNumberFrequency.ValueChanged += ValueChanged;
+            // 
             // MoveLeft
             // 
-            MoveLeft.Location = new Point(626, 5);
+            MoveLeft.Location = new Point(819, 5);
             MoveLeft.Margin = new Padding(25, 0, 5, 0);
             MoveLeft.Name = "MoveLeft";
             MoveLeft.Size = new Size(130, 29);
@@ -188,7 +214,7 @@ namespace GvdEdit
             // 
             // MoveRight
             // 
-            MoveRight.Location = new Point(766, 5);
+            MoveRight.Location = new Point(959, 5);
             MoveRight.Margin = new Padding(5, 0, 5, 0);
             MoveRight.Name = "MoveRight";
             MoveRight.Size = new Size(130, 29);
@@ -200,7 +226,7 @@ namespace GvdEdit
             // RefreshButton
             // 
             RefreshButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            RefreshButton.Location = new Point(926, 5);
+            RefreshButton.Location = new Point(1119, 5);
             RefreshButton.Margin = new Padding(25, 0, 5, 0);
             RefreshButton.Name = "RefreshButton";
             RefreshButton.Size = new Size(150, 29);
@@ -214,7 +240,7 @@ namespace GvdEdit
             AutoScaleDimensions = new SizeF(120F, 120F);
             AutoScaleMode = AutoScaleMode.Dpi;
             BackColor = Color.White;
-            ClientSize = new Size(1182, 553);
+            ClientSize = new Size(1582, 553);
             Controls.Add(ScrollPanel);
             Controls.Add(flowLayoutPanel1);
             Name = "GvdForm";
@@ -228,6 +254,7 @@ namespace GvdEdit
             ((System.ComponentModel.ISupportInitialize)ScaleY).EndInit();
             flowLayoutPanel1.ResumeLayout(false);
             flowLayoutPanel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)TrainNumberFrequency).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -247,5 +274,7 @@ namespace GvdEdit
         private Button MoveLeft;
         private Button MoveRight;
         private Button RefreshButton;
+        private Label label3;
+        private NumericUpDown TrainNumberFrequency;
     }
 }
