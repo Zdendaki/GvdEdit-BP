@@ -170,6 +170,19 @@ namespace GvdEdit.ViewModels
             }
         }
 
+        public TrainCategory Category
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Category));
+                }
+            }
+        }
+
         public StopVM() { }
 
         public StopVM(Station station)
@@ -190,6 +203,7 @@ namespace GvdEdit.ViewModels
             TelD3 = stop.TelD3;
             Starts = stop.Starts;
             Ends = stop.Ends;
+            Category = stop.Category;
         }
 
         public Stop GetStop()
@@ -206,7 +220,8 @@ namespace GvdEdit.ViewModels
                 ZDD = ZDD,
                 TelD3 = TelD3,
                 Starts = Starts,
-                Ends = Ends
+                Ends = Ends,
+                Category = Category
             };
         }
 

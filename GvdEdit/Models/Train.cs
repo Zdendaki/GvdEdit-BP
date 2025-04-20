@@ -20,6 +20,8 @@ namespace GvdEdit.Models
     {
         public Guid Station { get; set; }
 
+        public TrainCategory Category { get; set; }
+
         public TimeSpan Arrival { get; set; }
 
         public TimeSpan Departure { get; set; }

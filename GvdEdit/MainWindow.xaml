@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        xmlns:sys="clr-namespace:System.Collections;assembly=mscorlib"
         xmlns:local="clr-namespace:GvdEdit"
         xmlns:models="clr-namespace:GvdEdit.Models"
         xmlns:viewmodels="clr-namespace:GvdEdit.ViewModels"
@@ -18,6 +19,21 @@
                 <scm:SortDescription PropertyName="Number" Direction="Ascending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
+
+        <sys:ArrayList x:Key="Categories">
+            <local:TrainCategoryItem Name="Ex" Category="Ex" />
+            <local:TrainCategoryItem Name="R" Category="R" />
+            <local:TrainCategoryItem Name="Sp" Category="Sp" />
+            <local:TrainCategoryItem Name="Os" Category="Os" />
+            <local:TrainCategoryItem Name="Sv" Category="Sv" />
+            <local:TrainCategoryItem Name="Nex" Category="Nex" />
+            <local:TrainCategoryItem Name="Pn" Category="Pn" />
+            <local:TrainCategoryItem Name="Mn" Category="Mn" />
+            <local:TrainCategoryItem Name="Vleč" Category="Vlec" />
+            <local:TrainCategoryItem Name="Služ" Category="Sluz" />
+            <local:TrainCategoryItem Name="Lv" Category="Lv" />
+            <local:TrainCategoryItem Name="Pom" Category="Pom" />
+        </sys:ArrayList>
     </Window.Resources>
     
     <Grid>
@@ -39,6 +55,7 @@
             <MenuItem Header="Úpravy">
                 <MenuItem Header="Stanice" Click="EditStations_Click" />
                 <MenuItem Header="Nastavení" Click="Settings_Click" />
+                <MenuItem Header="Importovat z CIS JŘ" Click="CIS_JR_Click" />
             </MenuItem>
         </Menu>
 
@@ -68,6 +85,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -78,20 +96,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Grid.Row="0" Grid.Column="0" Content="Kategorie:" Margin="5" />
-                <ComboBox Grid.Row="0" Grid.Column="1" Margin="5" SelectedIndex="{Binding Category}">
-                    <ComboBoxItem Content="Ex" />
-                    <ComboBoxItem Content="R" />
-                    <ComboBoxItem Content="Sp" />
-                    <ComboBoxItem Content="Os" />
-                    <ComboBoxItem Content="Sv" />
-                    <ComboBoxItem Content="Nex" />
-                    <ComboBoxItem Content="Pn" />
-                    <ComboBoxItem Content="Mn" />
-                    <ComboBoxItem Content="Vleč" />
-                    <ComboBoxItem Content="Služ" />
-                    <ComboBoxItem Content="Lv" />
-                    <ComboBoxItem Content="Pom" />
-                </ComboBox>
+                <ComboBox Grid.Row="0" Grid.Column="1" Margin="5" SelectedIndex="{Binding Category}" ItemsSource="{StaticResource Categories}" SelectedValuePath="Category" />
 
                 <Label Grid.Row="0" Grid.Column="2" Content="Číslo vlaku:" Margin="5" />
                 <xctk:IntegerUpDown Grid.Row="0" Grid.Column="3" Margin="5" ShowButtonSpinner="False" Minimum="1" Maximum="899999" TextAlignment="Left" Value="{Binding Number}" />
@@ -105,8 +110,9 @@
                 <Label Grid.Row="2" Grid.Column="0" Content="Čas odjezdu:" Margin="5" />
                 <local:TimePicker2 x:Name="StartTime" Grid.Row="2" Grid.Column="1" Margin="5" ShowDropDownButton="False" TextAlignment="Left" Value="{Binding DepartureDate, UpdateSourceTrigger=PropertyChanged}" FormatString="HH:mm:ss" Format="Custom" />
 
-                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
-                    <CheckBox VerticalAlignment="Center" Content="Nabídková trasa PD" Margin="5,5,15,5" IsChecked="{Binding AdHocPath}" />
+                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Right">
+                    <CheckBox x:Name="IgnoreHidden" VerticalAlignment="Center" Content="Nevkládat skryté body" Margin="5,10,15,10" IsChecked="True" />
+                    <CheckBox VerticalAlignment="Center" Content="Katalogová trasa" Margin="5,5,15,5" IsChecked="{Binding AdHocPath}" />
                     <Button Margin="5" Content="Zavést vlak" Padding="10,0" x:Name="CreateTrain" Click="CreateTrain_Click" />
                     <xctk:DropDownButton Margin="0,5" Content="Importovat" Padding="10,0,5,0">
                         <xctk:DropDownButton.DropDownContent>
@@ -120,9 +126,12 @@
                     <Button Margin="5" Content="Duplikovat" Padding="10,0" />
                 </StackPanel>
 
-                <DataGrid x:Name="TrainStops" Grid.Row="3" Grid.ColumnSpan="4" CanUserSortColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" AutoGenerateColumns="False" ItemsSource="{Binding TrainStops}">
+                <DataGrid x:Name="TrainStops" Grid.Row="4" Grid.ColumnSpan="4" CanUserSortColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" AutoGenerateColumns="False" ItemsSource="{Binding TrainStops}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Dopravní bod" Binding="{Binding Station, Mode=OneTime}" Width="*" IsReadOnly="True" />
+
+                        <DataGridComboBoxColumn Header="Kategorie" Width="80" ItemsSource="{StaticResource Categories}" SelectedValueBinding="{Binding Category}" SelectedValuePath="Category" DisplayMemberPath="Name" />
+
                         <DataGridTemplateColumn Header="Pobyt" Width="80">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

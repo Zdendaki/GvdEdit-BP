@@ -297,17 +297,6 @@ namespace GvdEdit
                 List<PointF> points = new((train.Stops.Count - 1) * 2);
 
                 Pen pen = BLACK1;
-                if (train.ID == App.SelectedTrain)
-                    pen = GREEN4;
-                else if (train.Category < TrainCategory.Os || train.Category == TrainCategory.Pom)
-                    pen = BLACK4;
-                else if (train.Category < TrainCategory.Nex)
-                    pen = BLACK2;
-                else if (train.Category == TrainCategory.Nex)
-                    pen = BLUE4;
-                else if (train.Category < TrainCategory.Lv)
-                    pen = BLUE2;
-
                 for (int i = 0; i < train.Stops.Count - 1; i++)
                 {
                     Stop st1 = train.Stops[i];
@@ -327,6 +316,8 @@ namespace GvdEdit
                     if (ip2)
                         p2 = CalculatePointX(p1, p2, OFFSET_X + width);
 
+                    pen = getPen(train, st1);
+
                     bool directionDown = p2.Y > p1.Y;
 
                     if (i == 0 && !ip1)
@@ -341,7 +332,7 @@ namespace GvdEdit
                     if ((s1.DrawID % 2 == 0 || train.Stops.Count < 3) && !ip1 && !ip2)
                         DrawTrainNumber(g, train, p1, p2, pen.Brush);
 
-                    if ((st2.Departure - st2.Arrival) > TimeSpan.FromMinutes(1))
+                    if ((st2.Departure - st2.Arrival) > TimeSpan.FromMinutes(1) || st1.Category != st2.Category)
                     {
                         g.DrawLines(pen, points.ToArray());
                         points.Clear();
@@ -350,6 +341,22 @@ namespace GvdEdit
 
                 if (points.Count > 0)
                     g.DrawLines(pen, points.ToArray());
+
+                static Pen getPen(Train train, Stop stop)
+                {
+                    if (train.ID == App.SelectedTrain)
+                        return GREEN4;
+                    else if (stop.Category < TrainCategory.Os || stop.Category == TrainCategory.Pom)
+                        return BLACK4;
+                    else if (stop.Category < TrainCategory.Nex)
+                        return BLACK2;
+                    else if (stop.Category == TrainCategory.Nex)
+                        return BLUE4;
+                    else if (stop.Category < TrainCategory.Lv)
+                        return BLUE2;
+
+                    return BLACK1;
+                }
 
                 void pointDecor(in PointF point, Stop stop, bool directionDown, float delta)
                 {

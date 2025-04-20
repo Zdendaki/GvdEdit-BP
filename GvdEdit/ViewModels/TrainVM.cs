@@ -27,7 +27,7 @@ namespace GvdEdit.ViewModels
             }
         }
 
-        public int Category
+        public TrainCategory Category
         {
             get => field;
             set
@@ -114,7 +114,7 @@ namespace GvdEdit.ViewModels
         {
             ID = train.ID;
             Number = train.Number;
-            Category = (int)train.Category;
+            Category = train.Category;
             AdHocPath = train.AdHocPath;
             DepartureTime = train.Stops.First().Departure;
             StationFrom = App.Data.Stations.First(x => x.ID == train.Stops.First().Station);
@@ -134,7 +134,7 @@ namespace GvdEdit.ViewModels
             {
                 ID = ID,
                 AdHocPath = AdHocPath,
-                Category = (TrainCategory)Category,
+                Category = Category,
                 Number = Number,
                 Stops = TrainStops.Select(x => x.GetStop()).ToList()
             };
@@ -175,7 +175,7 @@ namespace GvdEdit.ViewModels
             App.MainWindow.RedrawGVD();
         }
 
-        public void CreateStops()
+        public void CreateStops(bool ignoreHiddenStops)
         {
             int id1 = App.Data.Stations.IndexOf(StationFrom);
             int id2 = App.Data.Stations.IndexOf(StationTo);
@@ -183,28 +183,40 @@ namespace GvdEdit.ViewModels
             if (id1 == -1 || id2 == -1 || id1 == id2)
                 return;
 
+            if (StationFrom.Hidden || StationTo.Hidden)
+                ignoreHiddenStops = false;
+
             TrainStops.Clear();
 
             if (id1 > id2)
             {
                 for (int i = id1; i >= id2; i--)
                 {
-                    var stop = new StopVM(App.Data.Stations[i]);
-                    stop.StopChanged += RecountStops;
-                    TrainStops.Add(stop);
+                    Station station = App.Data.Stations[i];
+                    if (station.Hidden && ignoreHiddenStops)
+                        continue;
+                    addStop(station);
                 }
             }
             else
             {
                 for (int i = id1; i <= id2; i++)
                 {
-                    var stop = new StopVM(App.Data.Stations[i]);
-                    stop.StopChanged += RecountStops;
-                    TrainStops.Add(stop);
+                    Station station = App.Data.Stations[i];
+                    if (station.Hidden && ignoreHiddenStops)
+                        continue;
+                    addStop(station);
                 }
             }
 
             RecountStops();
+
+            void addStop(Station station)
+            {
+                StopVM stop = new(station) { Category = Category };
+                stop.StopChanged += RecountStops;
+                TrainStops.Add(stop);
+            }
         }
 
         public string Name => $"{Enum.GetName((TrainCategory)Category)} {Number}";

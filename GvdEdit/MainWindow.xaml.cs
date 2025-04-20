@@ -137,7 +137,7 @@ namespace GvdEdit
             if (Trains.SelectedItem is not TrainVM train)
                 return;
 
-            train.CreateStops();
+            train.CreateStops(IgnoreHidden.IsChecked == true);
         }
 
         private void Trains_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -296,6 +296,12 @@ namespace GvdEdit
         {
             SettingsWindow sw = new(this);
             sw.ShowDialog();
+        }
+
+        private void CIS_JR_Click(object sender, RoutedEventArgs e)
+        {
+            CisJrImportWindow cisJrImportWindow = new(this);
+            cisJrImportWindow.ShowDialog();
         }
     }
 }
