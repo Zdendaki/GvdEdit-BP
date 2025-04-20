@@ -139,7 +139,7 @@ namespace GvdEdit
             ScaleY.Name = "ScaleY";
             ScaleY.Size = new Size(50, 27);
             ScaleY.TabIndex = 9;
-            ScaleY.Value = new decimal(new int[] { 10, 0, 0, 0 });
+            ScaleY.Value = new decimal(new int[] { 15, 0, 0, 0 });
             ScaleY.ValueChanged += ValueChanged;
             // 
             // flowLayoutPanel1

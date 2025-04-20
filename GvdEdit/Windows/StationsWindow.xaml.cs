@@ -39,13 +39,14 @@ namespace GvdEdit.Windows
         {
             if (Stations.SelectedItem is not Station station)
                 return;
-            
+
             int index = App.Data.Stations.IndexOf(station);
             if (index == 0)
                 return;
 
             App.Data.Stations.RemoveAt(index);
             App.Data.Stations.Insert(index - 1, station);
+            Stations.SelectedIndex = index - 1;
         }
 
         private void MoveStationDown_Click(object sender, RoutedEventArgs e)
@@ -59,6 +60,7 @@ namespace GvdEdit.Windows
 
             App.Data.Stations.RemoveAt(index);
             App.Data.Stations.Insert(index + 1, station);
+            Stations.SelectedIndex = index + 1;
         }
     }
 }

@@ -49,14 +49,14 @@ namespace GvdEdit.Models
 
         public string SR70
         {
-            get => field; 
-            set 
-            { 
-                if (field != value) 
-                { 
-                    field = value; 
-                    OnPropertyChanged(nameof(SR70)); 
-                } 
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(SR70));
+                }
             }
         }
 

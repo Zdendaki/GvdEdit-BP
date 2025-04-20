@@ -18,7 +18,7 @@ namespace GvdEdit
             {
                 if (field is not null)
                     field.Stations.CollectionChanged -= Stations_CollectionChanged;
-                
+
                 field = value;
 
                 Stations_CollectionChanged(null!, null!);

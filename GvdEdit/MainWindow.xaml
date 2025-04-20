@@ -103,7 +103,7 @@
                 <ComboBox x:Name="PointTo" Grid.Row="1" Grid.Column="3" Margin="5" SelectedItem="{Binding StationTo}" />
 
                 <Label Grid.Row="2" Grid.Column="0" Content="Čas odjezdu:" Margin="5" />
-                <local:TimePicker2 x:Name="StartTime" Grid.Row="2" Grid.Column="1" Margin="5" ShowDropDownButton="False" TextAlignment="Left" Value="{Binding DepartureDate, UpdateSourceTrigger=PropertyChanged}" FormatString="hh:mm:ss" Format="Custom" />
+                <local:TimePicker2 x:Name="StartTime" Grid.Row="2" Grid.Column="1" Margin="5" ShowDropDownButton="False" TextAlignment="Left" Value="{Binding DepartureDate, UpdateSourceTrigger=PropertyChanged}" FormatString="HH:mm:ss" Format="Custom" />
 
                 <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
                     <CheckBox VerticalAlignment="Center" Content="Nabídková trasa PD" Margin="5,5,15,5" IsChecked="{Binding AdHocPath}" />

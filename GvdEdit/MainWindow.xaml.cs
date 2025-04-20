@@ -152,11 +152,6 @@ namespace GvdEdit
                 return;
 
             bool loadExternTime = LoadStartTime.IsChecked == true;
-            if (!loadExternTime && !StartTime.Value.HasValue)
-            {
-                MessageBox.Show(this, "Nastavte čas odjezdu vlaku.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
 
             OpenFileDialog ofd = new()
             {
@@ -168,14 +163,14 @@ namespace GvdEdit
                 return;
 
             string fileName = ofd.FileName;
+            train.Initializing = true;
             train.TrainStops.Clear();
 
             try
             {
                 IEnumerable<string> lines = File.ReadAllLines(fileName).Skip(1);
-                
-                TimeSpan offset = TimeSpan.Zero;
-                TimeSpan lastDeparture = TimeSpan.Zero;
+
+                TimeSpan offset = loadExternTime ? TimeSpan.Zero : train.DepartureTime;
 
                 int i = 0;
                 foreach (string line in lines)
@@ -200,17 +195,25 @@ namespace GvdEdit
                     if (first)
                     {
                         arrival = departure;
-
-                        if (!loadExternTime)
-                            offset -= departure;
                     }
                     if (last)
                     {
                         departure = arrival;
                     }
 
-                    arrival = arrival.RoundUp(30);
-                    departure = departure.RoundUp(30);
+                    arrival = arrival.RoundUpToHalfMinute();
+                    departure = departure.RoundUpToHalfMinute();
+
+                    if (first)
+                    {
+                        if (loadExternTime)
+                            train.DepartureTime = departure;
+                        else
+                            offset -= departure;
+                    }
+                    
+                    arrival += offset;
+                    departure += offset;
 
                     bool stop = parts[0].Equals("Z", StringComparison.OrdinalIgnoreCase);
                     string name = parts[1];
@@ -221,28 +224,28 @@ namespace GvdEdit
 
                     if (stop && (departure - arrival) < TimeSpan.FromSeconds(30))
                         shortStop = true;
-
-                    float travelTime = 0;
                     float waitTime = 0;
-                    if (i > 0)
-                    {
-                        travelTime = (float)(arrival - lastDeparture).TotalMinutes;
-                    }
-                    lastDeparture = departure;
 
                     waitTime = (float)(departure - arrival).TotalMinutes;
 
                     train.AddStop(new StopVM
                     {
                         Station = station,
-                        Arrival = arrival + offset,
-                        Departure = departure + offset,
+                        Arrival = arrival,
+                        Departure = departure,
                         ShortStop = shortStop,
                         Starts = first,
                         Ends = last,
-                        WaitTime = waitTime,
-                        TravelTime = travelTime
+                        WaitTime = waitTime
                     });
+                }
+
+                for (int j = 0; j < train.TrainStops.Count - 1; j++)
+                {
+                    var stop = train.TrainStops[j];
+                    var next = train.TrainStops[j + 1];
+
+                    stop.TravelTime = (float)(next.Arrival - stop.Departure).TotalMinutes;
                 }
 
                 int lastID = -1;
@@ -259,22 +262,33 @@ namespace GvdEdit
 
                     if (id < 0 || Math.Abs(id - lastID) > 1)
                     {
-                        invalid = true;
-                        break;
+                        for (int j = lastID + 1; j < id; j++)
+                        {
+                            if (!App.Data.Stations[j].Hidden)
+                            {
+                                invalid = true;
+                                break;
+                            }
+                        }
+                        if (invalid)
+                        {
+                            train.TrainStops.Clear();
+                            MessageBox.Show(this, $"Načtený vlak není platný. Zkontrolujte, zda jsou zastávky v pořádku.\nVlak nenavazuje mezi body {App.Data.Stations[lastID].GetPrettyName(false)} a {stop.Station.GetPrettyName(false)}", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
                     }
 
                     lastID = id;
-                }
-
-                if (invalid)
-                {
-                    train.TrainStops.Clear();
-                    MessageBox.Show(this, "Načtený vlak není platný. Zkontrolujte, zda jsou zastávky v pořádku.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(this, ex.Message, "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                train.Initializing = false;
+                train.RecountStops();
             }
         }
 

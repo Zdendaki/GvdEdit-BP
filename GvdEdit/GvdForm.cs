@@ -16,7 +16,7 @@ namespace GvdEdit
     {
         private const int CP_NOCLOSE_BUTTON = 0x200;
 
-        private const int STATION_OFFSET = 60;
+        private const int STATION_OFFSET = 40;
         private const int LINE_OFFSET = 20;
         private const int OFFSET_X = 500;
         private const int OFFSET_Y = 220;
@@ -150,6 +150,7 @@ namespace GvdEdit
             RouteInterlocking interlocking = RouteInterlocking.None;
 
             int id = 0;
+            bool lastHidden = false;
             foreach (Station station in App.Data.Stations)
             {
                 if (lastkm < 0)
@@ -157,10 +158,14 @@ namespace GvdEdit
 
                 int fontSize = station.StationType == StationType.ZST ? 16 : 12;
 
-                y += STATION_OFFSET + Math.Abs(station.Position - lastkm) * StationScale;
+                int offset = lastHidden ? 0 : STATION_OFFSET;
+                y += offset + Math.Abs(station.Position - lastkm) * StationScale;
 
+                lastHidden = station.Hidden;
                 station.DrawY = y + LINE_OFFSET;
-                station.DrawID = id++;
+
+                if (!station.Hidden)
+                    station.DrawID = id++;
 
                 Pen? pen = interlocking switch
                 {

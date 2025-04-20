@@ -11,6 +11,8 @@ namespace GvdEdit.ViewModels
     {
         public Guid ID { get; init; }
 
+        internal bool Initializing = false;
+
         public int Number
         {
             get => field;
@@ -52,7 +54,14 @@ namespace GvdEdit.ViewModels
             }
         }
 
-        public TimeSpan DepartureTime => DepartureDate.TimeOfDay;
+        public TimeSpan DepartureTime
+        {
+            get => DepartureDate.TimeOfDay;
+            set
+            {
+                DepartureDate = DateTime.Today.AddTicks(value.Ticks);
+            } 
+        }
 
         public DateTime DepartureDate
         {
@@ -63,7 +72,7 @@ namespace GvdEdit.ViewModels
                 {
                     field = value;
                     OnPropertyChanged(nameof(DepartureDate));
-                    RecountStops(this, EventArgs.Empty);
+                    RecountStops();
                 }
             }
         }
@@ -107,7 +116,7 @@ namespace GvdEdit.ViewModels
             Number = train.Number;
             Category = (int)train.Category;
             AdHocPath = train.AdHocPath;
-            DepartureDate = DateTime.Today.AddTicks(train.Stops.First().Departure.Ticks);
+            DepartureTime = train.Stops.First().Departure;
             StationFrom = App.Data.Stations.First(x => x.ID == train.Stops.First().Station);
             StationTo = App.Data.Stations.First(x => x.ID == train.Stops.Last().Station);
 
@@ -136,18 +145,23 @@ namespace GvdEdit.ViewModels
             var stop = new StopVM(station);
             stop.StopChanged += RecountStops;
             TrainStops.Add(stop);
-            RecountStops(this, EventArgs.Empty);
+            RecountStops();
         }
 
         public void AddStop(StopVM stop)
         {
             stop.StopChanged += RecountStops;
             TrainStops.Add(stop);
-            RecountStops(this, EventArgs.Empty);
+            RecountStops();
         }
+
+        public void RecountStops() => RecountStops(this, EventArgs.Empty);
 
         private void RecountStops(object? sender, EventArgs e)
         {
+            if (Initializing)
+                return;
+
             TimeSpan time = DepartureTime;
 
             foreach (var stop in TrainStops)
@@ -190,7 +204,7 @@ namespace GvdEdit.ViewModels
                 }
             }
 
-            RecountStops(this, EventArgs.Empty);
+            RecountStops();
         }
 
         public string Name => $"{Enum.GetName((TrainCategory)Category)} {Number}";
