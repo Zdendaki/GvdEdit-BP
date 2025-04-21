@@ -11,7 +11,7 @@
 	<Platforms>AnyCPU;x86</Platforms>
 	<UseWindowsForms>True</UseWindowsForms>
 	<ImplicitUsings>False</ImplicitUsings>
-	<SatelliteResourceLanguages>cs-CZ,en</SatelliteResourceLanguages>
+	<SatelliteResourceLanguages>cs-CZ;en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

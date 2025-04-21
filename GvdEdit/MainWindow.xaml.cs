@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace GvdEdit
 {
@@ -18,6 +20,7 @@ namespace GvdEdit
     public partial class MainWindow : Window
     {
         private readonly GvdForm _gvdForm;
+        private ICollectionView _trainsView;
 
         public MainWindow()
         {
@@ -28,6 +31,7 @@ namespace GvdEdit
             Loaded += MainWindow_Loaded;
 
             DataContext = App.Data;
+            _trainsView = LoadCollectionView();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -81,11 +85,19 @@ namespace GvdEdit
                 App.FileName = fileName;
                 Save.IsEnabled = true;
                 DataContext = App.Data;
+                _trainsView = LoadCollectionView();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(this, ex.Message, "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private ICollectionView LoadCollectionView()
+        {
+            ICollectionView view = CollectionViewSource.GetDefaultView(App.Data.TrainsVM);
+            view.SortDescriptions.Add(new("Number", ListSortDirection.Ascending));
+            return view;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -152,6 +164,27 @@ namespace GvdEdit
                 return;
 
             App.Data.TrainsVM.Remove(train);
+            RedrawGVD();
+        }
+
+        private void CloneTrain_Click(object sender, RoutedEventArgs e)
+        {
+            if (Trains.SelectedItem is not TrainVM train)
+                return;
+
+            TrainVM newTrain = new(train.CloneTrain());
+            App.Data.TrainsVM.Add(newTrain);
+            Trains.SelectedItem = newTrain;
+        }
+
+        private void ClearTrains_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show(this, "Opravdu chcete odstranit VŠECHNY vlaky?", "Vymazat vlaky", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            App.Data.TrainsVM.Clear();
             RedrawGVD();
         }
 
@@ -316,8 +349,39 @@ namespace GvdEdit
 
         private void CIS_JR_Click(object sender, RoutedEventArgs e)
         {
+            if (OwnedWindows.OfType<CisJrImportWindow>().Any())
+                return;
+
             CisJrImportWindow cisJrImportWindow = new(this);
-            cisJrImportWindow.ShowDialog();
+            cisJrImportWindow.Show();
+        }
+
+        private void TrainFilter_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(TrainFilter.Text))
+            {
+                _trainsView.Filter = null;
+                return;
+            }
+
+            string filterText = TrainFilter.Text.Trim();
+            _trainsView.Filter = filter;
+
+            bool filter(object obj)
+            {
+                if (obj is not TrainVM train)
+                    return false;
+
+                return train.Number.ToString().Contains(filterText, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private void TrainNumber_ValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            Task.Run(() =>
+            {
+                Trains.Dispatcher.Invoke(_trainsView.Refresh);
+            });
         }
     }
 }

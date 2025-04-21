@@ -2,11 +2,14 @@
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Xml;
 
 namespace GvdEdit.Windows
@@ -16,13 +19,19 @@ namespace GvdEdit.Windows
     /// </summary>
     public partial class CisJrImportWindow : Window
     {
-        List<Train> trains = [];
+        private readonly ObservableCollection<CisTrain> _trains = [];
+        private readonly ICollectionView _trainsView;
 
         public CisJrImportWindow(Window owner)
         {
             InitializeComponent();
 
             Owner = owner;
+            TrainsBox.ItemsSource = _trains;
+            DateFilter.Value = DateTime.Today;
+
+            _trainsView = CollectionViewSource.GetDefaultView(_trains);
+            _trainsView.SortDescriptions.Add(new SortDescription("Number", ListSortDirection.Ascending));
         }
 
         private async void LoadTrains_Click(object sender, RoutedEventArgs e)
@@ -42,13 +51,13 @@ namespace GvdEdit.Windows
             await Task.Run(() => LoadTimetables(ofd.FolderName));
         }
 
-        private async Task LoadTimetables(string filename)
+        private async Task LoadTimetables(string folderName)
         {
             try
             {
                 await LoadProgress.Dispatcher.BeginInvoke(() => LoadProgress.IsIndeterminate = true);
 
-                DirectoryInfo di = new(filename);
+                DirectoryInfo di = new(folderName);
                 IEnumerable<FileInfo> files = di.EnumerateFiles("*.xml", SearchOption.AllDirectories);
 
                 int count = files.Count();
@@ -65,19 +74,13 @@ namespace GvdEdit.Windows
                     LoadProgress.Value = 0;
                 });
 
+                Dispatcher.Invoke(_trains.Clear);
+
                 foreach (FileInfo file in files)
                 {
                     LoadTrain(file.FullName);
                     await LoadProgress.Dispatcher.BeginInvoke(() => LoadProgress.Value++);
                 }
-
-                Dispatcher.Invoke(() =>
-                {
-                    foreach (Train train in trains)
-                    {
-                        App.Data.TrainsVM.Add(new(train));
-                    }
-                });
             }
             catch (Exception ex)
             {
@@ -115,7 +118,7 @@ namespace GvdEdit.Windows
 
         private void ParseInformation(XmlNode node)
         {
-            Train train = new();
+            CisTrain train = new();
             bool numberSet = false;
             bool first = true;
             bool lastNull = true;
@@ -146,15 +149,67 @@ namespace GvdEdit.Windows
 
                     first = false;
                 }
+                else if (child.Name == "PlannedCalendar")
+                {
+                    ParseCalendar(child, train);
+                }
             }
 
-            if (train.Stops.Count >= 2)
+            if (train.Stops.Count >= 2 && train.Days.Count > 0)
             {
                 if (!lastNull)
                     train.Stops.Last().Ends = true;
 
-                trains.Add(train);
+                Dispatcher.Invoke(() => _trains.Add(train));
             }
+        }
+
+        private void ParseCalendar(XmlNode node, CisTrain train)
+        {
+            DateTime startDate = DateTime.MinValue;
+            DateTime endDate = DateTime.MinValue;
+            List<bool> days = [];
+            bool invalid = false;
+
+            foreach (XmlNode child in node.ChildNodes)
+            {
+                if (child.Name == "BitmapDays")
+                {
+                    string bitmap = child.InnerText.Trim();
+                    for (int i = 0; i < bitmap.Length; i++)
+                    {
+                        if (bitmap[i] == '1')
+                            days.Add(true);
+                        else if (bitmap[i] == '0')
+                            days.Add(false);
+                        else
+                            invalid = true;
+                    }
+                }
+                else if (child.Name == "ValidityPeriod")
+                {
+                    foreach (XmlNode validityChild in child.ChildNodes)
+                    {
+                        if (validityChild.Name == "StartDateTime")
+                        {
+                            if (!DateTime.TryParseExact(validityChild.InnerText, "s", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out startDate))
+                                invalid = true;
+                        }
+                        else if (validityChild.Name == "EndDateTime")
+                        {
+                            if (!DateTime.TryParseExact(validityChild.InnerText, "s", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out endDate))
+                                invalid = true;
+                        }
+                    }
+                }
+            }
+
+            if (invalid)
+                return;
+
+            train.ValidityStart = startDate;
+            train.ValidityEnd = endDate;
+            train.Days = days;
         }
 
         // Stanice vlaku
@@ -331,6 +386,64 @@ namespace GvdEdit.Windows
                 TelD3 = telD3,
                 ZDD = zdd
             };
+        }
+
+        private void DateFilterOn_Checked(object sender, RoutedEventArgs e)
+        {
+            TrainFilter();
+        }
+
+        private void DateFilter_ValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            TrainFilter();
+        }
+
+        private void TrainFilter()
+        {
+            if (_trainsView is null)
+                return;
+
+            bool filterOn = DateFilterOn.IsChecked == true;
+            DateTime date = DateFilter.Value ?? DateTime.Today;
+
+            if (filterOn)
+            {
+                _trainsView.Filter = (obj) =>
+                {
+                    if (obj is not CisTrain train)
+                        return false;
+
+                    return train.GoesOn(date);
+                };
+            }
+            else
+            {
+                _trainsView.Filter = null;
+            }
+        }
+
+        private void AddAll_Click(object sender, RoutedEventArgs e)
+        {
+            bool all = DateFilterOn.IsChecked != true;
+            DateTime date = DateFilter.Value ?? DateTime.Today;
+            foreach (CisTrain train in _trains.Where(x => all || x.GoesOn(date)))
+            {
+                App.Data.TrainsVM.Add(new(train));
+            }
+
+            App.MainWindow.RedrawGVD();
+        }
+
+        private void AddSelected_Click(object sender, RoutedEventArgs e)
+        {
+            bool all = DateFilterOn.IsChecked != true;
+            DateTime date = DateFilter.Value ?? DateTime.Today;
+            foreach (CisTrain train in TrainsBox.SelectedItems.OfType<CisTrain>().Where(x => all || x.GoesOn(date)))
+            {
+                App.Data.TrainsVM.Add(new(train));
+            }
+
+            App.MainWindow.RedrawGVD();
         }
     }
 

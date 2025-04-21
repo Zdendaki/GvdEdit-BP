@@ -3,10 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:GvdEdit.Windows"
+        xmlns:models="clr-namespace:GvdEdit.Models"
         mc:Ignorable="d"
         WindowStartupLocation="CenterOwner"
-        Title="Importovat vlaky z CIS JŘ" Height="450" Width="800">
+        Title="Importovat vlaky z CIS JŘ" Height="450" Width="900">
+
+    <Window.Resources>
+        
+    </Window.Resources>
+    
     <Grid Margin="5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -21,14 +28,35 @@
         <Button Content="Vybrat adresář s vlaky z CIS JŘ" Padding="10,5" Margin="5" Click="LoadTrains_Click" />
         <ProgressBar x:Name="LoadProgress" Grid.Column="1" Margin="5" Minimum="0" IsIndeterminate="False" />
 
-        <ListBox Grid.Row="1" Margin="5" />
+        <ListBox x:Name="TrainsBox" Grid.Row="1" Margin="5" SelectionMode="Extended" />
 
-        <GroupBox Grid.Row="1" Grid.Column="1" Margin="3,0,3,3" Header="Detail vlaku">
-            
+        <GroupBox Grid.Row="1" Grid.Column="1" Margin="3,0,3,3" Header="Detail vlaku" d:DataContext="{d:DesignInstance models:CisTrain}" DataContext="{Binding ElementName=TrainsBox, Path=SelectedItem}">
+            <DataGrid x:Name="TrainStops" Grid.Row="4" Grid.ColumnSpan="4" CanUserSortColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" AutoGenerateColumns="False" ItemsSource="{Binding Stops}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Dopravní bod" Binding="{Binding StationName, Mode=OneTime}" Width="*" IsReadOnly="True" />
+                    <DataGridComboBoxColumn Header="Kategorie" Width="65" ItemsSource="{StaticResource Categories}" SelectedValueBinding="{Binding Category, Mode=OneTime}" SelectedValuePath="Category" DisplayMemberPath="Name" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Příjezd" Width="60" CanUserResize="False" Binding="{Binding Arrival, StringFormat=hh\\:mm\\:ss, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Odjezd" Width="60" CanUserResize="False" Binding="{Binding Departure, StringFormat=hh\\:mm\\:ss, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  L  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding LeftTrack, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  ▲  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding ShortStop, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  ◗  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding OnlyIn, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  ◖  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding OnlyOut, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  +  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding ZDD, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header=" ☎ " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding TelD3, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  Z  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding Starts, Mode=OneTime}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="  K  " Width="Auto" IsThreeState="False" CanUserResize="False" Binding="{Binding Ends, Mode=OneTime}" IsReadOnly="True" />
+                </DataGrid.Columns>
+            </DataGrid>
         </GroupBox>
 
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
-            <Button Content="Přidat vlaky" Padding="10,5" Margin="5" />
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center">
+            <CheckBox x:Name="DateFilterOn" Margin="5" Content="Pouze vlaky jedoucí" VerticalAlignment="Center" Checked="DateFilterOn_Checked" Unchecked="DateFilterOn_Checked" />
+            <xctk:DateTimePicker x:Name="DateFilter" Margin="5" Width="120" Format="Custom" FormatString="dd.MM.yyyy" TextAlignment="Left" IsEnabled="{Binding ElementName=DateFilterOn, Path=IsChecked}" ValueChanged="DateFilter_ValueChanged" TimePickerVisibility="Collapsed" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button Content="Přidat vybrané" Padding="10,5" Margin="5" Click="AddSelected_Click" />
+            <Button Content="Přidat vše" Padding="10,5" Margin="5" Click="AddAll_Click" />
         </StackPanel>
     </Grid>
 </Window>

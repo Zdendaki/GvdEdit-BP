@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
-        xmlns:sys="clr-namespace:System.Collections;assembly=mscorlib"
         xmlns:local="clr-namespace:GvdEdit"
         xmlns:models="clr-namespace:GvdEdit.Models"
         xmlns:viewmodels="clr-namespace:GvdEdit.ViewModels"
@@ -19,21 +18,6 @@
                 <scm:SortDescription PropertyName="Number" Direction="Ascending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
-
-        <sys:ArrayList x:Key="Categories">
-            <local:TrainCategoryItem Name="Ex" Category="Ex" />
-            <local:TrainCategoryItem Name="R" Category="R" />
-            <local:TrainCategoryItem Name="Sp" Category="Sp" />
-            <local:TrainCategoryItem Name="Os" Category="Os" />
-            <local:TrainCategoryItem Name="Sv" Category="Sv" />
-            <local:TrainCategoryItem Name="Nex" Category="Nex" />
-            <local:TrainCategoryItem Name="Pn" Category="Pn" />
-            <local:TrainCategoryItem Name="Mn" Category="Mn" />
-            <local:TrainCategoryItem Name="Vleč" Category="Vlec" />
-            <local:TrainCategoryItem Name="Služ" Category="Sluz" />
-            <local:TrainCategoryItem Name="Lv" Category="Lv" />
-            <local:TrainCategoryItem Name="Pom" Category="Pom" />
-        </sys:ArrayList>
     </Window.Resources>
     
     <Grid>
@@ -66,16 +50,21 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <ListBox x:Name="Trains" ItemsSource="{Binding Source={StaticResource TrainsView}}" DisplayMemberPath="Name" x:FieldModifier="internal" SelectionChanged="Trains_SelectionChanged" />
+                <ListBox x:Name="Trains" ItemsSource="{Binding TrainsVM}" DisplayMemberPath="Name" x:FieldModifier="internal" SelectionChanged="Trains_SelectionChanged" />
 
-                <xctk:SplitButton x:Name="NewTrain" Grid.Row="1" Margin="0,5" Content="Nový vlak" Padding="5" Click="NewTrain_Click">
-                    <xctk:SplitButton.DropDownContent>
-                        <StackPanel>
-                            <MenuItem Header="Odstranit vlak" Click="DeleteTrain_Click" />
-                            <MenuItem Header="Duplikovat vlak" />
-                        </StackPanel>
-                    </xctk:SplitButton.DropDownContent>
-                </xctk:SplitButton>
+                <StackPanel Orientation="Vertical" Grid.Row="1">
+                    <TextBox x:Name="TrainFilter" Margin="0,5,0,0" TextChanged="TrainFilter_TextChanged" />
+                    <xctk:SplitButton x:Name="NewTrain" Margin="0,5" Content="Nový vlak" Padding="5" Click="NewTrain_Click">
+                        <xctk:SplitButton.DropDownContent>
+                            <StackPanel>
+                                <MenuItem Header="Odstranit vlak" Click="DeleteTrain_Click" />
+                                <MenuItem Header="Duplikovat vlak" Click="CloneTrain_Click" />
+                                <Separator />
+                                <MenuItem Header="Vymazat všechny vlaky" Click="ClearTrains_Click" />
+                            </StackPanel>
+                        </xctk:SplitButton.DropDownContent>
+                    </xctk:SplitButton>
+                </StackPanel>
             </Grid>
         </GroupBox>
 
@@ -99,7 +88,7 @@
                 <ComboBox x:Name="Category" Grid.Row="0" Grid.Column="1" Margin="5" SelectedValue="{Binding Category}" ItemsSource="{StaticResource Categories}" SelectedValuePath="Category" />
 
                 <Label Grid.Row="0" Grid.Column="2" Content="Číslo vlaku:" Margin="5" />
-                <xctk:IntegerUpDown Grid.Row="0" Grid.Column="3" Margin="5" ShowButtonSpinner="False" Minimum="1" Maximum="899999" TextAlignment="Left" Value="{Binding Number}" />
+                <xctk:IntegerUpDown Grid.Row="0" Grid.Column="3" Margin="5" ShowButtonSpinner="False" Minimum="1" Maximum="899999" TextAlignment="Left" Value="{Binding Number}" ValueChanged="TrainNumber_ValueChanged" />
 
                 <Label Grid.Row="1" Grid.Column="0" Content="Výchozí bod:" Margin="5" />
                 <ComboBox x:Name="PointFrom" Grid.Row="1" Grid.Column="1" Margin="5" SelectedItem="{Binding StationFrom}" />
@@ -123,7 +112,7 @@
                             </StackPanel>
                         </xctk:DropDownButton.DropDownContent>
                     </xctk:DropDownButton>
-                    <Button Margin="5" Content="Duplikovat" Padding="10,0" />
+                    <Button Margin="5" Content="Duplikovat" Padding="10,0" Click="CloneTrain_Click" />
                 </StackPanel>
 
                 <DataGrid x:Name="TrainStops" Grid.Row="4" Grid.ColumnSpan="4" CanUserSortColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" AutoGenerateColumns="False" ItemsSource="{Binding TrainStops}">

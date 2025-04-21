@@ -1,9 +1,23 @@
 ﻿<Application x:Class="GvdEdit.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System.Collections;assembly=mscorlib"
              xmlns:local="clr-namespace:GvdEdit"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <sys:ArrayList x:Key="Categories">
+            <local:TrainCategoryItem Name="Ex" Category="Ex" />
+            <local:TrainCategoryItem Name="R" Category="R" />
+            <local:TrainCategoryItem Name="Sp" Category="Sp" />
+            <local:TrainCategoryItem Name="Os" Category="Os" />
+            <local:TrainCategoryItem Name="Sv" Category="Sv" />
+            <local:TrainCategoryItem Name="Nex" Category="Nex" />
+            <local:TrainCategoryItem Name="Pn" Category="Pn" />
+            <local:TrainCategoryItem Name="Mn" Category="Mn" />
+            <local:TrainCategoryItem Name="Vleč" Category="Vlec" />
+            <local:TrainCategoryItem Name="Služ" Category="Sluz" />
+            <local:TrainCategoryItem Name="Lv" Category="Lv" />
+            <local:TrainCategoryItem Name="Pom" Category="Pom" />
+        </sys:ArrayList>
     </Application.Resources>
 </Application>

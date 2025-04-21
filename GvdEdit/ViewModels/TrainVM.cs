@@ -154,6 +154,18 @@ namespace GvdEdit.ViewModels
             };
         }
 
+        public Train CloneTrain()
+        {
+            return new Train
+            {
+                ID = Guid.NewGuid(),
+                AdHocPath = AdHocPath,
+                Category = Category,
+                Number = Number + 2,
+                Stops = TrainStops.Select(x => x.GetStop()).ToList()
+            };
+        }
+
         protected void AddStop(Station station)
         {
             var stop = new StopVM(station);
@@ -233,7 +245,7 @@ namespace GvdEdit.ViewModels
             }
         }
 
-        public string Name => $"{Enum.GetName((TrainCategory)Category)} {Number}";
+        public string Name => $"{Enum.GetName(Category)} {Number}";
 
         public override string ToString() => Name;
     }
