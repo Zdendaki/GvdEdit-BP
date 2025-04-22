@@ -99,10 +99,22 @@
                 <Label Grid.Row="2" Grid.Column="0" Content="Čas odjezdu:" Margin="5" />
                 <local:TimePicker2 x:Name="StartTime" Grid.Row="2" Grid.Column="1" Margin="5" ShowDropDownButton="False" TextAlignment="Left" Value="{Binding DepartureDate, UpdateSourceTrigger=PropertyChanged}" FormatString="HH:mm:ss" Format="Custom" />
 
+                <StackPanel Grid.Row="2" Grid.Column="3" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <CheckBox x:Name="IgnoreHidden" VerticalAlignment="Center" Content="Nevkládat skryté body" Margin="5,0,15,0" IsChecked="True" />
+                    <CheckBox VerticalAlignment="Center" Content="Katalogová trasa" Margin="5,0" IsChecked="{Binding AdHocPath}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Margin="5" Content="- 1 hod" Padding="10,5" Click="Sub1hour_Click" />
+                    <Button Margin="5" Content="- 10 min" Padding="10,5" Click="Sub10min_Click" />
+                    <Button Margin="5" Content="- 1 min" Padding="10,5" Click="Sub1min_Click" />
+                    <Button Margin="5" Content="+ 1 min" Padding="10,5" Click="Add1min_Click" />
+                    <Button Margin="5" Content="+ 10 min" Padding="10,5" Click="Add10min_Click" />
+                    <Button Margin="5" Content="+ 1 hod" Padding="10,5" Click="Add1hour_Click" />
+                </StackPanel>
+
                 <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Right">
-                    <CheckBox x:Name="IgnoreHidden" VerticalAlignment="Center" Content="Nevkládat skryté body" Margin="5,10,15,10" IsChecked="True" />
-                    <CheckBox VerticalAlignment="Center" Content="Katalogová trasa" Margin="5,5,15,5" IsChecked="{Binding AdHocPath}" />
-                    <Button Margin="5" Content="Zavést vlak" Padding="10,0" x:Name="CreateTrain" Click="CreateTrain_Click" />
+                    <Button Margin="5" Content="Zavést vlak" Padding="10,5" x:Name="CreateTrain" Click="CreateTrain_Click" />
                     <xctk:DropDownButton Margin="0,5" Content="Importovat" Padding="10,0,5,0">
                         <xctk:DropDownButton.DropDownContent>
                             <StackPanel Margin="5">

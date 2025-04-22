@@ -21,6 +21,56 @@ namespace GvdEdit.Models
         public List<Stop> Stops { get; set; } = [];
 
         public override string ToString() => $"{Enum.GetName(Category)} {Number}";
+
+        internal bool GoesOverMidnight()
+        {
+            foreach (var stop in Stops)
+            {
+                if (stop.Arrival.TotalDays >= 1 || stop.Departure.TotalDays >= 0)
+                    return true;
+            }
+            return false;
+        }
+
+        internal Train AddDays(int days)
+        {
+            TimeSpan daysTS = TimeSpan.FromDays(days);
+            Train newTrain = CopyInstance();
+
+            foreach (Stop stop in newTrain.Stops)
+            {
+                stop.Arrival += daysTS;
+                stop.Departure += daysTS;
+            }
+
+            return newTrain;
+        }
+
+        private Train CopyInstance()
+        {
+            return new Train
+            {
+                ID = ID,
+                AdHocPath = AdHocPath,
+                Category = Category,
+                Number = Number,
+                Stops = Stops.Select(x => new Stop
+                {
+                    Station = x.Station,
+                    Arrival = x.Arrival,
+                    Category = Category,
+                    Departure = x.Departure,
+                    LeftTrack = x.LeftTrack,
+                    ShortStop = x.ShortStop,
+                    OnlyIn = x.OnlyIn,
+                    OnlyOut = x.OnlyOut,
+                    ZDD = x.ZDD,
+                    TelD3 = x.TelD3,
+                    Starts = x.Starts,
+                    Ends = x.Ends,
+                }).ToList()
+            };
+        }
     }
 
     public class CisTrain : Train

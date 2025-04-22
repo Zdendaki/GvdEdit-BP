@@ -383,5 +383,25 @@ namespace GvdEdit
                 Trains.Dispatcher.Invoke(_trainsView.Refresh);
             });
         }
+
+        private void Sub1hour_Click(object sender, RoutedEventArgs e) => AddTime(-60);
+
+        private void Sub10min_Click(object sender, RoutedEventArgs e) => AddTime(-10);
+
+        private void Sub1min_Click(object sender, RoutedEventArgs e) => AddTime(-1);
+
+        private void Add1min_Click(object sender, RoutedEventArgs e) => AddTime(1);
+
+        private void Add10min_Click(object sender, RoutedEventArgs e) => AddTime(10);
+
+        private void Add1hour_Click(object sender, RoutedEventArgs e) => AddTime(60);
+
+        private void AddTime(int minutes)
+        {
+            if (!StartTime.Value.HasValue)
+                return;
+
+            StartTime.Value = StartTime.Value.Value.AddMinutes(minutes);
+        }
     }
 }

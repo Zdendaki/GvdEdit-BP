@@ -71,5 +71,16 @@ namespace GvdEdit.Models
         public void ClearTrains() => Trains.Clear();
 
         public IEnumerable<Train> GetTrains() => TrainsVM.Select(x => x.GetTrain());
+
+        internal IEnumerable<Train> GetDrawableTrains()
+        {
+            foreach (Train train in TrainsVM.Select(x => x.GetTrain()))
+            {
+                yield return train;
+
+                if (train.GoesOverMidnight())
+                    yield return train.AddDays(-1);
+            }
+        }
     }
 }

@@ -292,7 +292,7 @@ namespace GvdEdit
             int width = (totalMinutes + 10) * MinuteScale;
             PointF? savedP1 = null;
             
-            foreach (Train train in App.Data.GetTrains())
+            foreach (Train train in App.Data.GetDrawableTrains())
             {
                 if (train.Stops.Count < 2)
                     continue;
@@ -366,20 +366,22 @@ namespace GvdEdit
 
                 Pen getPen(Train train, Stop stop)
                 {
-                    if (train.ID == App.SelectedTrain && !export)
-                        return GREEN4;
-                    else if (stop.Category < TrainCategory.Os || stop.Category == TrainCategory.Pom)
-                        return BLACK4;
-                    else if (stop.Category == TrainCategory.Sv)
-                        return BLACK1;
-                    else if (stop.Category < TrainCategory.Nex)
-                        return BLACK2;
-                    else if (stop.Category == TrainCategory.Nex)
-                        return BLUE4;
-                    else if (stop.Category < TrainCategory.Lv)
-                        return BLUE2;
+                    bool adHoc = train.AdHocPath;
 
-                    return BLACK1;
+                    if (train.ID == App.SelectedTrain && !export)
+                        return adHoc ? GREEN4Da : GREEN4;
+                    else if (stop.Category < TrainCategory.Os || stop.Category == TrainCategory.Pom)
+                        return adHoc ? BLACK4Da : BLACK4;
+                    else if (stop.Category == TrainCategory.Sv)
+                        return adHoc ? BLACK1Da : BLACK1;
+                    else if (stop.Category < TrainCategory.Nex)
+                        return adHoc? BLACK2Da : BLACK2;
+                    else if (stop.Category == TrainCategory.Nex)
+                        return adHoc ? BLUE4Da : BLUE4;
+                    else if (stop.Category < TrainCategory.Lv)
+                        return adHoc ? BLUE2Da : BLUE2;
+
+                    return adHoc ? BLACK1Da : BLACK1;
                 }
 
                 void pointDecor(in PointF point, Stop stop, bool directionDown, float delta)
@@ -622,13 +624,19 @@ namespace GvdEdit
 
         public static readonly Pen BLACK1 = new(Brushes.Black, 1);
 
+        public static readonly Pen BLACK1Da = new(Brushes.Black, 1) { DashStyle = DashStyle.Dash };
+
         public static readonly Pen BLACK2 = new(Brushes.Black, 2);
+
+        public static readonly Pen BLACK2Da = new(Brushes.Black, 2) { DashStyle = DashStyle.Dash };
 
         public static readonly Pen BLACK3 = new(Brushes.Black, 3);
 
+        public static readonly Pen BLACK3Da = new(Brushes.Black, 3) { DashStyle = DashStyle.Dash };
+
         public static readonly Pen BLACK4 = new(Brushes.Black, 4);
 
-        public static readonly Pen BLACK3Da = new(Brushes.Black, 3) { DashStyle = DashStyle.Dash };
+        public static readonly Pen BLACK4Da = new(Brushes.Black, 4) { DashStyle = DashStyle.Dash };
 
         public static readonly Pen BLACK3DaDo = new(Brushes.Black, 3) { DashStyle = DashStyle.DashDot };
 
@@ -642,12 +650,22 @@ namespace GvdEdit
 
         public static readonly Pen GREEN4 = new(SZ_GREN, 4);
 
-        public static readonly Pen BLUE4 = new(Brushes.Blue, 4);
+        public static readonly Pen GREEN4Da = new(SZ_GREN, 4) { DashStyle = DashStyle.Dash };
 
-        public static readonly Pen BLUE3 = new(Brushes.Blue, 3);
+        public static readonly Pen BLUE1 = new(Brushes.Blue, 1);
+
+        public static readonly Pen BLUE1Da = new(Brushes.Blue, 1) { DashStyle = DashStyle.Dash };
 
         public static readonly Pen BLUE2 = new(Brushes.Blue, 2);
 
-        public static readonly Pen BLUE1 = new(Brushes.Blue, 1);
+        public static readonly Pen BLUE2Da = new(Brushes.Blue, 2) { DashStyle = DashStyle.Dash };
+
+        public static readonly Pen BLUE3 = new(Brushes.Blue, 3);
+
+        public static readonly Pen BLUE3Da = new(Brushes.Blue, 3) { DashStyle = DashStyle.Dash };
+
+        public static readonly Pen BLUE4 = new(Brushes.Blue, 4);
+
+        public static readonly Pen BLUE4Da = new(Brushes.Blue, 4) { DashStyle = DashStyle.Dash };
     }
 }
