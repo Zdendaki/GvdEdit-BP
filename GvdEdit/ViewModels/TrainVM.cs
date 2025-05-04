@@ -75,7 +75,7 @@ namespace GvdEdit.ViewModels
                     RecountStops();
                 }
             }
-        }
+        } = DateTime.Today;
 
         public Station StationFrom
         {
