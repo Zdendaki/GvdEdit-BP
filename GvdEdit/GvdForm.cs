@@ -1,4 +1,6 @@
 ﻿using GvdEdit.Models;
+using SvgNet;
+using SvgNet.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,7 +8,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using static GvdEdit.DrawingData;
 
@@ -102,13 +106,13 @@ namespace GvdEdit
         {
             _stopwatch.Restart();
 
-            Draw(e.Graphics);
+            Draw(new GdiGraphics(e.Graphics));
 
             _stopwatch.Stop();
             e.Graphics.DrawString(_stopwatch.ElapsedMilliseconds.ToString(), new Font(Verdana, 10, FontStyle.Bold), Brushes.Red, 0, 0);
         }
 
-        private void Draw(Graphics g, bool export = false)
+        private void Draw(IGraphics g, bool export = false)
         {
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
             g.CompositingQuality = CompositingQuality.HighQuality;
@@ -121,11 +125,11 @@ namespace GvdEdit
 
             DrawHeader(g);
             DrawStations(g);
-            DrawGrid(g);
+            DrawGrid(g, export);
             DrawTrains(g, export);
         }
 
-        private void DrawHeader(Graphics g)
+        private void DrawHeader(IGraphics g)
         {
             g.DrawString("Nákresný jízdní řád", new Font(Verdana, 24, FontStyle.Bold), SZ_BLUE, 200, 20);
             g.DrawString(App.Data.TimetableName, new Font(Verdana, 20, FontStyle.Bold), SZ_ORGE, 200, 80);
@@ -135,7 +139,7 @@ namespace GvdEdit
             g.DrawString(App.Data.Variant, new Font(Verdana, 20, FontStyle.Bold), SZ_BLUE, 1300, 80);
         }
 
-        private void DrawStations(Graphics g)
+        private void DrawStations(IGraphics g)
         {
             int totalMinutes = (HourTo - HourFrom) * 60;
             int name2X = OFFSET_X + (totalMinutes + 10) * MinuteScale;
@@ -212,7 +216,7 @@ namespace GvdEdit
             g.DrawLine(BLACK2, 440, OFFSET_Y + LINE_OFFSET, 440, y + LINE_OFFSET + STATION_OFFSET);
         }
 
-        private void DrawGrid(Graphics g)
+        private void DrawGrid(IGraphics g, bool export)
         {
             int totalMinutes = (HourTo - HourFrom) * 60;
             int width = (totalMinutes + 10) * MinuteScale;
@@ -237,7 +241,7 @@ namespace GvdEdit
                     int deltaY = isZST ? 5 : 3;
                     float dx = startX + x * MinuteScale;
 
-                    if (!g.VisibleClipBounds.ContainsX(dx))
+                    if (!export && !g.VisibleClipBounds.ContainsX(dx))
                         continue;
 
                     if (x % 10 == 0)
@@ -253,7 +257,7 @@ namespace GvdEdit
             for (int x = 10; x < totalMinutes; x += 10)
             {
                 float dx = startX + x * MinuteScale;
-                if (!g.VisibleClipBounds.ContainsX(dx))
+                if (!export && !g.VisibleClipBounds.ContainsX(dx))
                     continue;
 
                 Pen pen;
@@ -285,7 +289,7 @@ namespace GvdEdit
             g.DrawLine(ORANGE4, OFFSET_X + width - MinuteScale * 5, OFFSET_Y + LINE_OFFSET, OFFSET_X + width - MinuteScale * 5, lastY + STATION_OFFSET);
         }
 
-        private void DrawTrains(Graphics g, bool export)
+        private void DrawTrains(IGraphics g, bool export)
         {
             Font font = new Font(Verdana, 10, FontStyle.Bold);
             int totalMinutes = (HourTo - HourFrom) * 60;
@@ -425,7 +429,7 @@ namespace GvdEdit
             return new PointF(x, slope * relX + MathF.Min(p1.Y, p2.Y));
         }
 
-        private void DrawTrainNumber(Graphics g, Stop stop, Train train, PointF p1, PointF p2, Brush color)
+        private void DrawTrainNumber(IGraphics g, Stop stop, Train train, PointF p1, PointF p2, Brush color)
         {
             const float DEG = 180f / MathF.PI;
 
@@ -446,7 +450,7 @@ namespace GvdEdit
             return Utils.GetPointsOnLine(p1, p2, count);
         }
 
-        private void DrawSv(Graphics g, List<PointF> points)
+        private void DrawSv(IGraphics g, List<PointF> points)
         {
             foreach (PointF point in points)
             {
@@ -456,13 +460,13 @@ namespace GvdEdit
             }
         }
 
-        private static void DrawRotatedText(Graphics g, float x, float y, float angle, string text, Font font, Brush brush)
+        private static void DrawRotatedText(IGraphics g, float x, float y, float angle, string text, Font font, Brush brush)
         {
             g.TranslateTransform(x, y);
             g.RotateTransform(angle);
             g.TranslateTransform(-x, -y);
             SizeF size = g.MeasureString(text, font);
-            g.DrawString(text, font, brush, new PointF(x - size.Width / 2.0f, y - size.Height));
+            g.DrawString(text, font, brush, new RectangleF(x - size.Width / 2f, y - size.Height, size.Width, size.Height), new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
             g.ResetTransform();
         }
 
@@ -496,30 +500,50 @@ namespace GvdEdit
         private void ExportButton_Click(object sender, EventArgs e)
         {
             Size size = ComputeSize();
-            using Bitmap bitmap = new(size.Width, size.Height);
-            using (Graphics g = Graphics.FromImage(bitmap))
-                Draw(g, true);
 
-            string fileName = App.Data.Stations.First().Name + " - " + App.Data.Stations.Last().Name + ".png";
+            string fileName = App.Data.Stations.First().Name + " - " + App.Data.Stations.Last().Name;
             using SaveFileDialog dialog = new()
             {
-                Filter = "Soubory PNG (*.png)|*.png|Všechny soubory|*.*",
+                Filter = "Soubory PNG (*.png)|*.png|Soubory SVG (*.svg)|*.svg|Všechny soubory|*.*",
                 FileName = fileName,
-                Title = "Exportovat do PNG"
+                Title = "Exportovat"
             };
 
             if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            try
+            string path = dialog.FileName;
+            if (path.ToLowerInvariant().TrimEnd().EndsWith(".svg"))
             {
-                string path = dialog.FileName;
-                bitmap.Save(path, ImageFormat.Png);
-                MessageBox.Show(this, $"Obrázek exportován do {path}", "Exportováno", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                SvgGraphics graphics = new();
+                Draw(graphics, true);
+
+                try
+                {
+                    File.WriteAllText(path, graphics.WriteSVGString(size));
+                    MessageBox.Show(this, $"Obrázek exportován do {path}", "Exportováno", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, $"Chyba při exportu obrázku: {ex.Message}", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show(this, $"Chyba při exportu obrázku: {ex.Message}", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                using Bitmap bitmap = new(size.Width, size.Height);
+                using (Graphics g = Graphics.FromImage(bitmap))
+                    Draw(new GdiGraphics(g), true);
+
+                try
+                {
+                    bitmap.Save(path, ImageFormat.Png);
+                    MessageBox.Show(this, $"Obrázek exportován do {path}", "Exportováno", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, $"Chyba při exportu obrázku: {ex.Message}", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 

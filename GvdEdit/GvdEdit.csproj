@@ -17,5 +17,6 @@
   <ItemGroup>
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SvgNet" Version="3.5.0" />
   </ItemGroup>
 </Project>
