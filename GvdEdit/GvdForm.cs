@@ -10,7 +10,6 @@ using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Windows.Forms;
 using static GvdEdit.DrawingData;
 
@@ -295,7 +294,7 @@ namespace GvdEdit
             int totalMinutes = (HourTo - HourFrom) * 60;
             int width = (totalMinutes + 10) * MinuteScale;
             PointF? savedP1 = null;
-            
+
             foreach (Train train in App.Data.GetDrawableTrains())
             {
                 if (train.Stops.Count < 2)
@@ -303,6 +302,7 @@ namespace GvdEdit
 
                 List<PointF> points = new((train.Stops.Count - 1) * 2);
                 List<PointF> svPoints = [];
+                List<TrainNumberData> trainNumbers = [];
 
                 Pen pen = BLACK1;
                 for (int i = 0; i < train.Stops.Count - 1; i++)
@@ -345,16 +345,19 @@ namespace GvdEdit
                         if (s2.Hidden)
                             savedP1 = p1;
                         else
-                            DrawTrainNumber(g, st1, train, p1, p2, pen.Brush);
+                            trainNumbers.Add(new TrainNumberData(st1, p1, p2, pen.Brush));
                     }
                     else if (savedP1.HasValue && !s2.Hidden)
                     {
-                        DrawTrainNumber(g, st1, train, savedP1.Value, p2, pen.Brush);
+                        trainNumbers.Add(new TrainNumberData(st1, p1, p2, pen.Brush));
                         savedP1 = null;
                     }
 
                     if ((st2.Departure - st2.Arrival) > TimeSpan.FromMinutes(1) || st1.Category != st2.Category)
                     {
+                        if (train.Highlight)
+                            g.DrawLines(HIGHLIGHT, points.ToArray());
+
                         g.DrawLines(pen, points.ToArray());
                         points.Clear();
                     }
@@ -364,9 +367,19 @@ namespace GvdEdit
                 }
 
                 if (points.Count > 0)
+                {
+                    if (train.Highlight)
+                        g.DrawLines(HIGHLIGHT, points.ToArray());
+
                     g.DrawLines(pen, points.ToArray());
+                }
 
                 DrawSv(g, svPoints);
+
+                foreach (TrainNumberData num in trainNumbers)
+                {
+                    DrawTrainNumber(g, num.Stop, train, num.P1, num.P2, num.Brush, train.Highlight);
+                }
 
                 Pen getPen(Train train, Stop stop)
                 {
@@ -379,7 +392,7 @@ namespace GvdEdit
                     else if (stop.Category == TrainCategory.Sv)
                         return adHoc ? BLACK1Da : BLACK1;
                     else if (stop.Category < TrainCategory.Nex)
-                        return adHoc? BLACK2Da : BLACK2;
+                        return adHoc ? BLACK2Da : BLACK2;
                     else if (stop.Category == TrainCategory.Nex)
                         return adHoc ? BLUE4Da : BLUE4;
                     else if (stop.Category < TrainCategory.Lv)
@@ -429,7 +442,7 @@ namespace GvdEdit
             return new PointF(x, slope * relX + MathF.Min(p1.Y, p2.Y));
         }
 
-        private void DrawTrainNumber(IGraphics g, Stop stop, Train train, PointF p1, PointF p2, Brush color)
+        private void DrawTrainNumber(IGraphics g, Stop stop, Train train, PointF p1, PointF p2, Brush color, bool highlight)
         {
             const float DEG = 180f / MathF.PI;
 
@@ -440,7 +453,7 @@ namespace GvdEdit
 
             train.Drawn = true;
 
-            DrawRotatedText(g, middle.X, middle.Y, angle, text, new(Verdana, size), color);
+            DrawRotatedText(g, middle.X, middle.Y, angle, text, new(Verdana, size), color, highlight);
         }
 
         private List<PointF> GetSvPoints(PointF p1, PointF p2)
@@ -460,13 +473,16 @@ namespace GvdEdit
             }
         }
 
-        private static void DrawRotatedText(IGraphics g, float x, float y, float angle, string text, Font font, Brush brush)
+        private static void DrawRotatedText(IGraphics g, float x, float y, float angle, string text, Font font, Brush brush, bool highlight)
         {
             g.TranslateTransform(x, y);
             g.RotateTransform(angle);
             g.TranslateTransform(-x, -y);
             SizeF size = g.MeasureString(text, font);
-            g.DrawString(text, font, brush, new RectangleF(x - size.Width / 2f, y - size.Height, size.Width, size.Height), new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+            RectangleF rect = new RectangleF(x - size.Width / 2f, y - size.Height, size.Width, size.Height);
+            if (highlight)
+                g.FillRectangle(HIGHLIGHT.Brush, rect);
+            g.DrawString(text, font, brush, rect, new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
             g.ResetTransform();
         }
 
@@ -691,5 +707,23 @@ namespace GvdEdit
         public static readonly Pen BLUE4 = new(Brushes.Blue, 4);
 
         public static readonly Pen BLUE4Da = new(Brushes.Blue, 4) { DashStyle = DashStyle.Dash };
+
+        public static readonly Pen HIGHLIGHT = new(new SolidBrush(Color.FromArgb(127, 255, 255, 0)), 20);
+    }
+}
+
+readonly struct TrainNumberData
+{
+    public readonly Stop Stop;
+    public readonly PointF P1;
+    public readonly PointF P2;
+    public readonly Brush Brush;
+
+    public TrainNumberData(Stop stop, PointF p1, PointF p2, Brush brush)
+    {
+        Stop = stop;
+        P1 = p1;
+        P2 = p2;
+        Brush = brush;
     }
 }

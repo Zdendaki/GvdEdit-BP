@@ -18,6 +18,8 @@ namespace GvdEdit.Models
 
         public bool AdHocPath { get; set; }
 
+        public bool Highlight { get; set; }
+
         public List<Stop> Stops { get; set; } = [];
 
         public override string ToString() => $"{Enum.GetName(Category)} {Number}";
@@ -52,6 +54,7 @@ namespace GvdEdit.Models
             {
                 ID = ID,
                 AdHocPath = AdHocPath,
+                Highlight = Highlight,
                 Category = Category,
                 Number = Number,
                 Stops = Stops.Select(x => new Stop

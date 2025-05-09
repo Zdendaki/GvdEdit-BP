@@ -102,6 +102,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="3" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
                     <CheckBox x:Name="IgnoreHidden" VerticalAlignment="Center" Content="Nevkládat skryté body" Margin="5,0,15,0" IsChecked="True" />
                     <CheckBox VerticalAlignment="Center" Content="Katalogová trasa" Margin="5,0" IsChecked="{Binding AdHocPath}" />
+                    <CheckBox VerticalAlignment="Center" Content="Zvýraznit trasu" Margin="5,0" IsChecked="{Binding Highlight}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">

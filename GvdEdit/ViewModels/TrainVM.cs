@@ -54,6 +54,19 @@ namespace GvdEdit.ViewModels
             }
         }
 
+        public bool Highlight
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Highlight));
+                }
+            }
+        }
+
         public TimeSpan DepartureTime
         {
             get => DepartureDate.TimeOfDay;
@@ -117,6 +130,7 @@ namespace GvdEdit.ViewModels
             ID = train.ID;
             Number = train.Number;
             AdHocPath = train.AdHocPath;
+            Highlight = train.Highlight;
             DepartureTime = train.Stops.First().Departure;
             StationFrom = App.Data.Stations.First(x => x.ID == train.Stops.First().Station);
             StationTo = App.Data.Stations.First(x => x.ID == train.Stops.Last().Station);
@@ -148,6 +162,7 @@ namespace GvdEdit.ViewModels
             {
                 ID = ID,
                 AdHocPath = AdHocPath,
+                Highlight = Highlight,
                 Category = Category,
                 Number = Number,
                 Stops = TrainStops.Select(x => x.GetStop()).ToList()
@@ -160,6 +175,7 @@ namespace GvdEdit.ViewModels
             {
                 ID = Guid.NewGuid(),
                 AdHocPath = AdHocPath,
+                Highlight = Highlight,
                 Category = Category,
                 Number = Number + 2,
                 Stops = TrainStops.Select(x => x.GetStop()).ToList()
