@@ -54,7 +54,7 @@ namespace GvdEdit
             int totalMinutes = (HourTo - HourFrom) * 60;
             int name2X = OFFSET_X + (totalMinutes + 10) * MinuteScale;
 
-            int width = name2X + 600;
+            int width = name2X + 540;
             float height = OFFSET_Y;
             float lastkm = -1;
 
@@ -115,7 +115,8 @@ namespace GvdEdit
         {
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
             g.CompositingQuality = CompositingQuality.HighQuality;
-            g.SmoothingMode = SmoothingMode.HighQuality;
+            g.SmoothingMode = SmoothingMode.HighSpeed;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
             g.Clear(Color.White);
 
@@ -125,6 +126,7 @@ namespace GvdEdit
             DrawHeader(g);
             DrawStations(g);
             DrawGrid(g, export);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
             DrawTrains(g, export);
         }
 
@@ -349,7 +351,7 @@ namespace GvdEdit
                     }
                     else if (savedP1.HasValue && !s2.Hidden)
                     {
-                        trainNumbers.Add(new TrainNumberData(st1, p1, p2, pen.Brush));
+                        trainNumbers.Add(new TrainNumberData(st1, savedP1.Value, p2, pen.Brush));
                         savedP1 = null;
                     }
 
@@ -520,7 +522,7 @@ namespace GvdEdit
             string fileName = App.Data.Stations.First().Name + " - " + App.Data.Stations.Last().Name;
             using SaveFileDialog dialog = new()
             {
-                Filter = "Soubory PNG (*.png)|*.png|Soubory SVG (*.svg)|*.svg|Všechny soubory|*.*",
+                Filter = "Soubory PNG (*.png)|*.png|Soubory SVG (*.svg)|*.svg|Soubory EMF (*.emf)|*.emf|Všechny soubory|*.*",
                 FileName = fileName,
                 Title = "Exportovat"
             };
@@ -529,7 +531,9 @@ namespace GvdEdit
                 return;
 
             string path = dialog.FileName;
-            if (path.ToLowerInvariant().TrimEnd().EndsWith(".svg"))
+            string pathTrim = path.ToLowerInvariant().TrimEnd();
+
+            if (pathTrim.EndsWith(".svg"))
             {
                 SvgGraphics graphics = new();
                 Draw(graphics, true);
@@ -537,6 +541,24 @@ namespace GvdEdit
                 try
                 {
                     File.WriteAllText(path, graphics.WriteSVGString(size));
+                    MessageBox.Show(this, $"Obrázek exportován do {path}", "Exportováno", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, $"Chyba při exportu obrázku: {ex.Message}", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+            else if (pathTrim.EndsWith("*.emf"))
+            {
+                try
+                {
+                    using (Metafile metafile = new(path, nint.Zero, new(0, 0, size.Width, size.Height), MetafileFrameUnit.Pixel, EmfType.EmfPlusOnly))
+                    {
+                        using Graphics g = Graphics.FromImage(metafile);
+                        Draw(new GdiGraphics(g), true);
+                    }
+
                     MessageBox.Show(this, $"Obrázek exportován do {path}", "Exportováno", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
