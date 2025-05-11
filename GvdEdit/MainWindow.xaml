@@ -114,7 +114,28 @@
                     <Button Margin="5" Content="+ 1 hod" Padding="10,5" Click="Add1hour_Click" />
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                    <Label Margin="5">
+                        <Label.Content>
+                            <TextBlock>
+                                <Run Text="Pobyt: " />
+                                <Run Text="{Binding WaitTime, Mode=OneWay}" d:Text="0" />
+                                <Run Text=" min" />
+                            </TextBlock>
+                        </Label.Content>
+                    </Label>
+                    <Label Margin="5">
+                        <Label.Content>
+                            <TextBlock>
+                                <Run Text="JD: " />
+                                <Run Text="{Binding TravelTime, Mode=OneWay}" d:Text="0" />
+                                <Run Text=" min" />
+                            </TextBlock>
+                        </Label.Content>
+                    </Label>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
                     <Button Margin="5" Content="Zavést vlak" Padding="10,5" x:Name="CreateTrain" Click="CreateTrain_Click" />
                     <xctk:DropDownButton Margin="0,5" Content="Importovat" Padding="10,0,5,0">
                         <xctk:DropDownButton.DropDownContent>

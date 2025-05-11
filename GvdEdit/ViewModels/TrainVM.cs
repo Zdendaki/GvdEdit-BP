@@ -116,6 +116,10 @@ namespace GvdEdit.ViewModels
             }
         }
 
+        public double TravelTime => TrainStops.Count > 0 ? Math.Round(TrainStops.Last().Arrival.TotalMinutes - TrainStops.First().Departure.TotalMinutes, 1) : 0;
+
+        public float WaitTime => MathF.Round(TrainStops.Sum(x => x.WaitTime), 1);
+
         public ObservableCollection<StopVM> TrainStops { get; set; } = [];
 
         public TrainVM()
@@ -213,6 +217,9 @@ namespace GvdEdit.ViewModels
                 stop.Departure = time;
                 time += TimeSpan.FromMinutes(stop.TravelTime);
             }
+
+            OnPropertyChanged(nameof(TravelTime));
+            OnPropertyChanged(nameof(WaitTime));
 
             App.MainWindow.RedrawGVD();
         }
