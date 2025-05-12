@@ -153,11 +153,17 @@ namespace GvdEdit
             g.DrawLine(BLACK2, 400, y + LINE_OFFSET, 440, y + LINE_OFFSET);
 
             Font km = new Font(Verdana, 12);
+            Font tracks = new Font(Verdana, 10);
 
             RouteInterlocking interlocking = RouteInterlocking.None;
 
             int id = 0;
             bool lastHidden = false;
+            int lastRouteTracks = 0;
+            int firstX = 0;
+            int lastX = 0;
+            bool first = true;
+
             foreach (Station station in App.Data.Stations)
             {
                 if (lastkm < 0)
@@ -184,6 +190,45 @@ namespace GvdEdit
                 if (pen is not null)
                     g.DrawLine(pen, 420, lastY, 420, y + LINE_OFFSET);
 
+
+                if (lastRouteTracks > 0) 
+                {
+                    if (lastRouteTracks >= 2)
+                    {
+                        g.DrawLine(BLACK2, 468, lastY, 468, y + LINE_OFFSET);
+
+                        firstX = lastX = 468;
+                    }
+                    if (lastRouteTracks >= 1)
+                    {
+                        g.DrawLine(BLACK2, 472, lastY, 472, y + LINE_OFFSET);
+
+                        if (firstX == 0)
+                            firstX = 472;
+                        lastX = 472;
+                    }
+                }
+                else if (first)
+                {
+                    if (station.RouteTracks >= 2)
+                    {
+                        firstX = lastX = 468;
+                    }
+                    if (station.RouteTracks >= 1)
+                    {
+                        if (firstX == 0)
+                            firstX = 472;
+                        lastX = 472;
+                    }
+                }
+
+                if (station.TracksLeft > 0 || station.TracksRight > 0)
+                {
+                    SizeF sz = g.MeasureString(station.TracksLeft.ToString(), tracks);
+                    g.DrawString(station.TracksLeft.ToString(), tracks, Brushes.Black, firstX - sz.Width, y + 6);
+                    g.DrawString(station.TracksRight.ToString(), tracks, Brushes.Black, lastX + 2, y + 6);
+                }
+
                 if (!station.Hidden)
                 {
                     FontStyle style = station.StationType == StationType.Other || station.StationType == StationType.AHr ? FontStyle.Italic : FontStyle.Regular;
@@ -204,8 +249,10 @@ namespace GvdEdit
                 }
 
                 lastkm = station.Position2;
+                lastRouteTracks = station.RouteTracks;
                 interlocking = station.RouteInterlocking;
                 lastY = y + LINE_OFFSET;
+                first = false;
 
                 if (station.StationType == StationType.ZST)
                     g.DrawLine(BLACK2, 400, y + LINE_OFFSET, 440, y + LINE_OFFSET);
